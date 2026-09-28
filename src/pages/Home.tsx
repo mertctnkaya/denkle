@@ -188,9 +188,20 @@ export const Home = () => {
                     </span>
                   </div>
                 </div>
-                <div>
+                <div className="mt-auto">
                   <h4 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-1 mb-1">{party.name}</h4>
-                  <p className="text-xs font-medium text-slate-500">Kod: <span className="font-bold text-primary">{party.join_code}</span></p>
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigator.clipboard.writeText(party.join_code);
+                      addToast('Davet kodu kopyalandı!', 'success');
+                    }}
+                    className="inline-flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary-dark dark:text-primary-light px-2 py-1 rounded-md transition-colors"
+                    title="Kodu kopyala"
+                  >
+                    <span className="text-xs font-bold tracking-wider">{party.join_code}</span>
+                    <Icon name="copy" size={12} />
+                  </div>
                 </div>
               </div>
             ))}

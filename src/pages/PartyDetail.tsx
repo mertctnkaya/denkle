@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { usePartyStore } from '../store/partyStore';
+import { useToastStore } from '../store/toastStore';
 import { Icon } from '../components/shared/Icon';
 import { Button } from '../components/shared/Button';
 
@@ -8,6 +9,7 @@ export const PartyDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { currentParty, members, fetchPartyDetails, isLoading, error } = usePartyStore();
+  const { addToast } = useToastStore();
   const [activeTab, setActiveTab] = useState<'feed' | 'balances'>('feed');
 
   useEffect(() => {
@@ -53,9 +55,22 @@ export const PartyDetail = () => {
             <h1 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
               {currentParty.name}
             </h1>
-            <p className="text-xs font-medium text-slate-500">
-              Kod: <span className="text-primary font-bold">{currentParty.join_code}</span>
-            </p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <div
+                onClick={() => {
+                  navigator.clipboard.writeText(currentParty.join_code);
+                  addToast('Davet kodu kopyalandı!', 'success');
+                }}
+                className="flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary-dark dark:text-primary-light px-2 py-0.5 rounded-md cursor-pointer transition-colors"
+                title="Kodu kopyala"
+              >
+                <span className="text-xs font-bold tracking-wider">{currentParty.join_code}</span>
+                <Icon name="copy" size={10} />
+              </div>
+              <span className="text-[10px] text-slate-400 font-medium">
+                {new Date(currentParty.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </span>
+            </div>
           </div>
         </div>
 
