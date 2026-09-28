@@ -17,7 +17,6 @@ export const Profile = () => {
     try {
       await signOut();
       addToast('Başarıyla çıkış yapıldı.', 'info');
-      // signOut sonrasında App.tsx isAuthenticated=false olacağı için ana sayfaya/landing'e düşeriz.
     } catch (error) {
       addToast('Çıkış yapılırken bir hata oluştu.', 'error');
     }
@@ -32,42 +31,42 @@ export const Profile = () => {
   ];
 
   return (
-    <div className="p-6 pt-12 pb-24 max-w-lg mx-auto">
+    <div className="p-6 md:p-0 pt-12 md:pt-6 pb-24 md:pb-6 max-w-2xl mx-auto w-full">
       {/* Üst Kısım: Başlık */}
-      <div className="flex items-center gap-3 mb-8">
+      <div className="flex items-center gap-4 mb-8">
         <button
           onClick={() => navigate(-1)}
-          className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+          className="md:hidden w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
         >
           <Icon name="back" size={20} />
         </button>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Profil</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">Profil Ayarları</h1>
       </div>
 
       {/* Profil Kartı */}
-      <div className="bg-white dark:bg-card-dark rounded-3xl p-6 border border-slate-100 dark:border-slate-800 shadow-sm mb-6 flex items-center gap-5">
-        <div className="w-16 h-16 bg-primary-light dark:bg-primary-dark/30 rounded-2xl flex items-center justify-center text-primary font-bold text-3xl border-2 border-white dark:border-slate-800 shadow-sm shrink-0 uppercase">
+      <div className="bg-white dark:bg-card-dark rounded-3xl p-6 md:p-8 border border-slate-100 dark:border-slate-800 shadow-sm mb-8 flex items-center gap-6">
+        <div className="w-16 h-16 md:w-20 md:h-20 bg-primary-light dark:bg-primary-dark/30 rounded-2xl flex items-center justify-center text-primary font-bold text-3xl md:text-4xl border-2 border-white dark:border-slate-800 shadow-sm shrink-0 uppercase">
           {initial}
         </div>
         <div className="overflow-hidden">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white truncate">{fullName}</h2>
-          <p className="text-sm text-slate-500 font-medium truncate">{email}</p>
+          <h2 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white truncate">{fullName}</h2>
+          <p className="text-sm md:text-base text-slate-500 font-medium truncate mt-1">{email}</p>
         </div>
       </div>
 
-      {/* Karma Puanı */}
-      <div className="bg-linear-to-r from-warning-light/50 to-warning-light/10 dark:from-warning-dark/20 dark:to-transparent rounded-3xl p-5 border border-warning/20 mb-8 flex items-center justify-between">
+      {/* Karma Puanı (AI Fikri) */}
+      <div className="bg-linear-to-r from-warning-light/50 to-warning-light/10 dark:from-warning-dark/20 dark:to-transparent rounded-3xl p-6 md:p-8 border border-warning/20 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Icon name="star" size={18} className="text-warning-dark dark:text-warning" />
-            <p className="font-bold text-slate-900 dark:text-white">Karma Puanı</p>
+          <div className="flex items-center gap-2 mb-2">
+            <Icon name="star" size={20} className="text-warning-dark dark:text-warning" />
+            <p className="font-bold text-lg text-slate-900 dark:text-white">Karma Puanı</p>
           </div>
-          <p className="text-xs text-slate-600 dark:text-slate-400 font-medium max-w-[200px]">
+          <p className="text-sm text-slate-600 dark:text-slate-400 font-medium max-w-sm">
             Borçlarını vaktinde ödüyorsun. Güvenilirlik skorun yüksek!
           </p>
         </div>
-        <div className="text-right">
-          <span className="text-2xl font-black text-warning-dark dark:text-warning">%95</span>
+        <div className="text-left md:text-right">
+          <span className="text-4xl font-black text-warning-dark dark:text-warning">%95</span>
         </div>
       </div>
 
@@ -76,18 +75,18 @@ export const Profile = () => {
         {menuItems.map((item, index) => (
           <div
             key={index}
-            className={`flex items-center p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${index !== menuItems.length - 1 ? 'border-b border-slate-100 dark:border-slate-800/50' : ''
+            className={`group flex items-center p-4 md:p-5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${index !== menuItems.length - 1 ? 'border-b border-slate-100 dark:border-slate-800/50' : ''
               }`}
             onClick={() => addToast('Bu özellik yakında eklenecek!', 'info')}
           >
-            <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0 mr-4">
-              <Icon name={item.icon} size={20} />
+            <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 group-hover:bg-primary-light dark:group-hover:bg-primary-dark/30 rounded-xl flex items-center justify-center text-slate-500 dark:text-slate-400 group-hover:text-primary dark:group-hover:text-primary-light shrink-0 mr-4 md:mr-5 transition-all duration-300">
+              <Icon name={item.icon} size={22} className="group-hover:scale-110 transition-transform duration-300" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-slate-900 dark:text-white text-sm">{item.title}</h3>
-              <p className="text-xs text-slate-500 mt-0.5">{item.subtitle}</p>
+              <h3 className="font-semibold text-slate-900 dark:text-white text-base group-hover:text-primary dark:group-hover:text-primary-light transition-colors">{item.title}</h3>
+              <p className="text-sm text-slate-500 mt-0.5">{item.subtitle}</p>
             </div>
-            <Icon name="forward" size={18} className="text-slate-400" />
+            <Icon name="forward" size={20} className="text-slate-400 group-hover:text-primary dark:group-hover:text-primary-light group-hover:translate-x-1 transition-all duration-300" />
           </div>
         ))}
       </div>
@@ -95,9 +94,9 @@ export const Profile = () => {
       {/* Çıkış Yap Butonu */}
       <button
         onClick={handleLogout}
-        className="w-full py-4 bg-danger-50 dark:bg-danger-500/10 text-danger-700 dark:text-danger-400 rounded-2xl font-bold text-lg border border-danger-200 dark:border-danger-500/20 hover:bg-danger-100 dark:hover:bg-danger-500/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+        className="w-full py-4 md:py-5 bg-transparent border-2 border-danger text-danger rounded-2xl font-bold text-lg hover:bg-danger hover:text-white hover:shadow-lg hover:shadow-danger/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
       >
-        <Icon name="logout" size={20} />
+        <Icon name="logout" size={22} />
         Çıkış Yap
       </button>
 

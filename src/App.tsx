@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { MobileLayout } from './components/layout/MobileLayout';
+import { AppLayout } from './components/layout/AppLayout';
 import { Home } from './pages/Home';
 import { Auth } from './pages/Auth';
 import { Landing } from './pages/Landing';
@@ -40,7 +40,7 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </>
         ) : (
-          <Route element={<MobileLayout />}>
+          <Route element={<AppLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/auth" element={<Navigate to="/" replace />} />
             <Route path="/parties" element={<div className="p-6 pt-12"><h2 className="font-bold text-xl">Gruplar</h2></div>} />
