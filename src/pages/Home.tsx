@@ -1,6 +1,10 @@
 import React from 'react';
+import { Sun, Moon } from 'lucide-react';
+import { useThemeStore } from '../store/themeStore';
 
 export const Home = () => {
+  const { isDarkMode, toggleTheme } = useThemeStore();
+
   return (
     <div className="p-6 pt-12">
       {/* Üst Karşılama Alanı */}
@@ -9,8 +13,18 @@ export const Home = () => {
           <p className="text-sm text-slate-500 font-medium mb-1">Günaydın, Mert</p>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Hesaplar Denk! 🎉</h1>
         </div>
-        <div className="w-12 h-12 bg-primary-light dark:bg-primary-dark/30 rounded-full flex items-center justify-center text-primary font-bold text-lg border-2 border-white dark:border-slate-800 shadow-sm">
-          M
+        <div className="flex items-center gap-3">
+          {/* Tema Değiştirici Buton */}
+          <button 
+            onClick={toggleTheme}
+            className="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 bg-slate-100 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+          >
+            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+          
+          <div className="w-12 h-12 bg-primary-light dark:bg-primary-dark/30 rounded-full flex items-center justify-center text-primary font-bold text-lg border-2 border-white dark:border-slate-800 shadow-sm">
+            M
+          </div>
         </div>
       </div>
 
