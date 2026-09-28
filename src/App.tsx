@@ -1,15 +1,34 @@
 import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { MobileLayout } from './components/layout/MobileLayout';
+import { Home } from './pages/Home';
+import { Auth } from './pages/Auth';
 
 function App() {
+  // Geçici: Sisteme giriş yapmış mıyız? (Zustand authStore'a bağlanana kadar)
+  const isAuthenticated = true; 
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="soft-card max-w-md w-full text-center">
-        <h1 className="text-2xl font-bold text-primary mb-2">Denkle</h1>
-        <p className="text-slate-500 dark:text-slate-400">
-          Soft Social UI Hazır! (Aşama 1 Tamamlandı)
-        </p>
-      </div>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        {/* Giriş yapmamış kullanıcılar için Auth sayfası */}
+        {!isAuthenticated ? (
+          <Route path="*" element={<Auth />} />
+        ) : (
+          /* Giriş yapmış kullanıcılar için ana mobil arayüz */
+          <Route element={<MobileLayout />}>
+            <Route path="/" element={<Home />} />
+            {/* Diğer sayfalar buraya gelecek */}
+            <Route path="/parties" element={<div className="p-6 pt-12"><h2 className="font-bold text-xl">Gruplar</h2></div>} />
+            <Route path="/activity" element={<div className="p-6 pt-12"><h2 className="font-bold text-xl">Hareketler</h2></div>} />
+            <Route path="/profile" element={<div className="p-6 pt-12"><h2 className="font-bold text-xl">Profil</h2></div>} />
+            
+            {/* Eşleşmeyen yollar Ana Sayfa'ya */}
+            <Route path="*" element={<Home />} />
+          </Route>
+        )}
+      </Routes>
+    </BrowserRouter>
   );
 }
 

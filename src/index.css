@@ -52,3 +52,19 @@
     @apply bg-card-light dark:bg-card-dark rounded-3xl shadow-soft dark:shadow-soft-dark p-4 md:p-6 transition-all duration-300;
   }
 }
+
+/* Custom Scrollbar for a native feel */
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-slate-200 dark:bg-slate-800 rounded-full;
+  }
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+  }
+}
