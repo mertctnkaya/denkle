@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { Icon } from '../components/shared/Icon';
-
+import { Button } from '../components/shared/Button';
 export const Home = () => {
   const navigate = useNavigate();
   const { profile, user } = useAuthStore();
@@ -62,13 +62,8 @@ export const Home = () => {
         </div>
 
         <div className="relative z-10 flex gap-4">
-          <button className="flex-1 bg-primary text-white py-3.5 rounded-xl font-bold text-sm hover:bg-primary-dark active:scale-[0.98] transition-all cursor-pointer shadow-lg shadow-primary/25 flex items-center justify-center gap-2">
-            <Icon name="plus" size={18} strokeWidth={2.5} />
-            Ben Ödedim
-          </button>
-          <button className="flex-1 bg-white/10 text-white py-3.5 rounded-xl font-bold text-sm hover:bg-white/20 active:scale-[0.98] transition-all cursor-pointer backdrop-blur-md">
-            Hızlı Paylaş
-          </button>
+          <Button variant="primary" icon="plus" fullWidth>Ben Ödedim</Button>
+          <Button className="bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border-0" fullWidth>Hızlı Paylaş</Button>
         </div>
       </div>
 

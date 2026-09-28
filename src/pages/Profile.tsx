@@ -4,6 +4,7 @@ import { useToastStore } from '../store/toastStore';
 import { useThemeStore } from '../store/themeStore';
 import { Icon } from '../components/shared/Icon';
 import type { IconName } from '../components/shared/Icon';
+import { Button } from '../components/shared/Button';
 
 export const Profile = () => {
   const navigate = useNavigate();
@@ -153,13 +154,16 @@ export const Profile = () => {
       </div>
 
       {/* Çıkış Yap Butonu */}
-      <button
+      <Button
+        variant="danger"
+        size="lg"
+        fullWidth
+        icon="logout"
         onClick={handleLogout}
-        className="w-full py-4 md:py-5 bg-transparent border-2 border-danger text-danger rounded-2xl font-bold text-lg hover:bg-danger hover:text-white hover:shadow-lg hover:shadow-danger/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer group"
+        className="bg-transparent border-2 !border-danger hover:bg-danger text-danger hover:text-white mt-2"
       >
-        <Icon name="logout" size={22} className="text-danger group-hover:text-white transition-colors" />
         Çıkış Yap
-      </button>
+      </Button>
 
     </div>
   );
