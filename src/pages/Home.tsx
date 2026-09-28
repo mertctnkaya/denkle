@@ -1,15 +1,21 @@
 import { Sun, Moon } from 'lucide-react';
 import { useThemeStore } from '../store/themeStore';
+import { useAuthStore } from '../store/authStore';
 
 export const Home = () => {
   const { isDarkMode, toggleTheme } = useThemeStore();
+  const { profile } = useAuthStore();
+
+  // İsmin ilk harfini al, profil yoksa 'K' (Kullanıcı) göster
+  const initial = profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : 'K';
+  const displayName = profile?.full_name ? profile.full_name.split(' ')[0] : 'Kullanıcı';
 
   return (
     <div className="p-6 pt-12">
       {/* Üst Karşılama Alanı */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <p className="text-sm text-slate-500 font-medium mb-1">Günaydın, Mert</p>
+          <p className="text-sm text-slate-500 font-medium mb-1">Günaydın, {displayName}</p>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Hesaplar Denk! 🎉</h1>
         </div>
         <div className="flex items-center gap-3">
@@ -21,8 +27,8 @@ export const Home = () => {
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
 
-          <div className="w-12 h-12 bg-primary-light dark:bg-primary-dark/30 rounded-full flex items-center justify-center text-primary font-bold text-lg border-2 border-white dark:border-slate-800 shadow-sm">
-            M
+          <div className="w-12 h-12 bg-primary-light dark:bg-primary-dark/30 rounded-full flex items-center justify-center text-primary font-bold text-lg border-2 border-white dark:border-slate-800 shadow-sm uppercase">
+            {initial}
           </div>
         </div>
       </div>

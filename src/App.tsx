@@ -3,20 +3,31 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { MobileLayout } from './components/layout/MobileLayout';
 import { Home } from './pages/Home';
 import { Auth } from './pages/Auth';
+import { NotFound } from './pages/NotFound';
 import { useThemeStore } from './store/themeStore';
+import { useAuthStore } from './store/authStore';
+import { ToastContainer } from './components/shared/Toast';
 
 function App() {
   const initTheme = useThemeStore((state) => state.initTheme);
+  const { session, initialize, isLoading } = useAuthStore();
 
   useEffect(() => {
     initTheme();
-  }, [initTheme]);
+    initialize();
+  }, [initTheme, initialize]);
 
-  // Geçici: Sisteme giriş yapmış mıyız?
-  const isAuthenticated = true;
+  // Auth durumu yükleniyorsa boş bir sayfa (veya spinner) gösterelim
+  if (isLoading) {
+    return <div className="min-h-screen bg-background-light dark:bg-background-dark" />;
+  }
+
+  // Gerçek oturum durumu
+  const isAuthenticated = !!session;
 
   return (
     <BrowserRouter>
+      <ToastContainer />
       <Routes>
         {!isAuthenticated ? (
           <Route path="*" element={<Auth />} />
@@ -26,7 +37,7 @@ function App() {
             <Route path="/parties" element={<div className="p-6 pt-12"><h2 className="font-bold text-xl">Gruplar</h2></div>} />
             <Route path="/activity" element={<div className="p-6 pt-12"><h2 className="font-bold text-xl">Hareketler</h2></div>} />
             <Route path="/profile" element={<div className="p-6 pt-12"><h2 className="font-bold text-xl">Profil</h2></div>} />
-            <Route path="*" element={<Home />} />
+            <Route path="*" element={<NotFound />} />
           </Route>
         )}
       </Routes>
