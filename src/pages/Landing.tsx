@@ -13,7 +13,7 @@ export const Landing = () => {
   const groupName = searchParams.get('group') || 'Ortak Hesap';
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors selection:bg-primary/20 flex flex-col">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 transition-colors selection:bg-primary/20 flex flex-col">
 
       {/* Üst Navigasyon (Sadece Landing İçin) */}
       <nav className="w-full px-6 py-4 flex items-center justify-between max-w-5xl mx-auto">
@@ -29,7 +29,7 @@ export const Landing = () => {
         <div className="flex items-center gap-4">
           <button
             onClick={toggleTheme}
-            className="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
@@ -42,104 +42,77 @@ export const Landing = () => {
         </div>
       </nav>
 
-      {/* Ana İçerik (Hero Section) */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-12 max-w-5xl mx-auto w-full text-center relative">
+      {/* Ana İçerik */}
+      <main className="flex-1 flex flex-col items-center justify-center px-6 py-12 md:py-24 text-center max-w-3xl mx-auto w-full">
 
-        {/* Arkaplan Dekorasyonları (Desktop & Mobile Uyumlu) */}
-        <div className="absolute top-10 left-10 w-72 h-72 bg-primary/20 blur-[100px] rounded-full pointer-events-none -z-10" />
-        <div className="absolute bottom-10 right-10 w-72 h-72 bg-warning/20 blur-[100px] rounded-full pointer-events-none -z-10" />
-
-        {inviter ? (
-          // DAVETLİ (SHADOW PROFILE) GÖRÜNÜMÜ
-          <div className="max-w-lg mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="w-20 h-20 bg-primary-light dark:bg-primary-dark/30 text-primary rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-white dark:border-slate-900 shadow-xl">
-              <Users size={32} />
+        {/* Davet Kartı (Eğer inviter parametresi varsa) */}
+        {inviter && (
+          <div className="mb-8 p-4 md:p-6 bg-white dark:bg-card-dark rounded-3xl border border-primary/20 shadow-lg shadow-primary/5 animate-fade-in inline-flex flex-col items-center">
+            <div className="w-12 h-12 bg-primary-light text-primary rounded-full flex items-center justify-center mb-3">
+              <Icon name="users" size={24} />
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-4 tracking-tight leading-tight">
-              <span className="text-primary">{inviter}</span> seni davet etti!
-            </h1>
-            <p className="text-lg text-slate-500 dark:text-slate-400 mb-8 font-medium">
-              "{groupName}" grubundaki ortak masrafları bölüşmek için hemen katıl.
+            <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base">
+              <strong className="text-slate-900 dark:text-white">{inviter}</strong> seni
+              <strong className="text-slate-900 dark:text-white"> {groupName}</strong> grubuna davet etti!
             </p>
-
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={() => alert('Misafir girişi altyapısı hazırlanıyor...')} // Daha sonra anonim auth'a bağlanacak
-                className="w-full py-4 cursor-pointer bg-primary text-white rounded-2xl font-bold text-lg shadow-lg shadow-primary/30 hover:bg-primary-dark active:scale-[0.98] transition-all flex justify-center items-center gap-2"
-              >
-                Hemen Başla (Misafir)
-                <ArrowRight size={20} />
-              </button>
-              <button
-                onClick={() => navigate('/auth')}
-                className="w-full py-4 cursor-pointer bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 rounded-2xl font-bold text-lg shadow-sm border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-[0.98] transition-all"
-              >
-                Kayıt Ol & Giriş Yap
-              </button>
-            </div>
-
-            <div className="mt-6 flex items-start gap-2 text-left bg-warning-light/30 dark:bg-warning-dark/10 p-4 rounded-xl border border-warning/20">
-              <Icon name="info" className="text-warning-dark dark:text-warning-light shrink-0 mt-0.5" size={18} />
-              <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">
-                Misafir olarak başlarsan, ileride dilediğin zaman kayıt olarak tüm geçmişini ve verilerini kalıcı hale getirebilirsin.
-              </p>
-            </div>
-          </div>
-        ) : (
-          // ORGANİK (NORMAL) GÖRÜNÜM
-          <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <span className="inline-block py-1.5 px-4 rounded-full bg-primary-light dark:bg-primary-dark/30 text-primary-dark dark:text-primary-light text-xs font-bold tracking-wide mb-6">
-              HESAPLAŞMANIN EN KOLAY YOLU
-            </span>
-            <h1 className="text-5xl md:text-7xl font-bold text-slate-900 dark:text-white mb-6 tracking-tight leading-tight">
-              Kim kime ne ödeyecek <br className="hidden md:block" /> derdine <span className="text-primary">son ver.</span>
-            </h1>
-            <p className="text-lg md:text-xl text-slate-500 dark:text-slate-400 mb-10 font-medium max-w-lg mx-auto">
-              Tatil, ev arkadaşlığı veya akşam yemeği... Ortak masrafları gir, Denkleş senin için kimin ne kadar borcu olduğunu hesaplasın.
-            </p>
-
-            <button
-              onClick={() => navigate('/auth')}
-              className="px-10 py-5 cursor-pointer bg-primary text-white rounded-full font-bold text-xl shadow-xl shadow-primary/30 hover:bg-primary-dark hover:-translate-y-1 active:translate-y-0 transition-all flex items-center gap-2 mx-auto"
-            >
-              Ücretsiz Başla
-              <ArrowRight size={24} />
-            </button>
           </div>
         )}
 
-        {/* Özellikler (Sadece organik görünümde veya aşağı kaydırınca) */}
-        {!inviter && (
-          <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl text-left border-t border-slate-200 dark:border-slate-800 pt-16">
-            <FeatureCard
-              icon={<PieChart size={24} />}
-              title="Zekice Bölüşüm"
-              desc="Kimisi eksi yedi, kimisi fazla verdi. Algoritmamız en az işlemle borçları sadeleştirir."
-            />
-            <FeatureCard
-              icon={<Users size={24} />}
-              title="Kayıtsız Katılım"
-              desc="Arkadaşlarına link at, uygulama indirmeden saniyeler içinde hesaba dahil olsunlar."
-            />
-            <FeatureCard
-              icon={<Wallet size={24} />}
-              title="Tamamen Ücretsiz"
-              desc="Gizli ücret yok, premium dayatması yok. Tüm temel hesaplaşma özellikleri bedava."
-            />
-          </div>
-        )}
+        {/* Hero Sloganı */}
+        <h1 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tight mb-6 leading-tight">
+          Hesapları Bölüşmenin <br className="hidden md:block" />
+          <span className="text-transparent bg-clip-text bg-linear-to-r from-primary to-primary-dark">
+            En Adaletli Yolu.
+          </span>
+        </h1>
 
+        <p className="text-lg md:text-xl text-slate-500 dark:text-slate-400 mb-10 max-w-xl">
+          Ev arkadaşlarınla, tatilde veya ofiste kimin kime ne kadar borcu olduğunu saniyeler içinde hesapla.
+        </p>
+
+        {/* Hemen Başla Butonu */}
+        <button
+          onClick={() => navigate('/auth')}
+          className="w-full md:w-auto px-8 py-4 bg-primary text-white rounded-2xl font-bold text-lg hover:bg-primary-dark active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-xl shadow-primary/30 mb-6 cursor-pointer"
+        >
+          Hemen Başla
+          <ArrowRight size={20} />
+        </button>
+
+        <p className="text-xs text-slate-400 dark:text-slate-500">
+          Denkleş'i denemek tamamen ücretsizdir. <br className="md:hidden" /> Kredi kartı gerekmez.
+        </p>
       </main>
+
+      {/* Özellikler Grid (Masaüstü için güzel durur) */}
+      <section className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-16 md:py-24 px-6 w-full">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="flex flex-col items-center text-center p-6 rounded-3xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+            <div className="w-14 h-14 bg-primary-light dark:bg-primary-dark/30 text-primary rounded-2xl flex items-center justify-center mb-4">
+              <Users size={28} />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Gruplar Oluştur</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">Tatil, ev veya ofis için farklı gruplar kur, herkesi tek bir yere topla.</p>
+          </div>
+
+          <div className="flex flex-col items-center text-center p-6 rounded-3xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+            <div className="w-14 h-14 bg-success-light dark:bg-success-dark/30 text-success-dark dark:text-success rounded-2xl flex items-center justify-center mb-4">
+              <PieChart size={28} />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Matematiği Bize Bırak</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">Karmaşık borç ağlarını anında sadeleştirir. "Kim kime ne verecek?" derdi biter.</p>
+          </div>
+
+          <div className="flex flex-col items-center text-center p-6 rounded-3xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+            <div className="w-14 h-14 bg-warning-light dark:bg-warning-dark/30 text-warning-dark dark:text-warning rounded-2xl flex items-center justify-center mb-4">
+              <Wallet size={28} />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Hesapları Kapat</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">IBAN veya Papara kopyala, ödemeni yap ve tek tuşla "Ödedim" diyerek hesabı kapat.</p>
+          </div>
+        </div>
+      </section>
+
     </div>
   );
 };
-
-const FeatureCard = ({ icon, title, desc }: { icon: React.ReactNode, title: string, desc: string }) => (
-  <div className="bg-white dark:bg-card-dark p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
-    <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 text-primary rounded-2xl flex items-center justify-center mb-4">
-      {icon}
-    </div>
-    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{title}</h3>
-    <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{desc}</p>
-  </div>
-);

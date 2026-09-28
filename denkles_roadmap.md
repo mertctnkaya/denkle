@@ -218,7 +218,7 @@ UI kod tekrarını önlemek ve tasarımı tek merkezden yönetmek için `src/com
 
 _MVP'de ASLA Olmayacaklar: Navigasyon, canlı konum, OCR, AI, banka متنوعentegrasyonu, arkadaş listesi, halka açık partiler._
 
-1.  **Aşama 1 (DB ve Engine):** Supabase tabloları, Typescript pure fonksiyonları (`splitEqually`, `simplifyDebts`), RLS kuralları.
+1.  [x] **Aşama 1 (UI ve Kurulum Tamamlandı, DB Başlayacak):** Supabase tabloları, Typescript pure fonksiyonları (`splitEqually`, `simplifyDebts`), RLS kuralları.
 2.  **v0.1 (MVP - Çekirdek):** Auth, Parti kur, Kod ile katıl, Rol atamaları, Hayalet üye oluşturma ve "Claim Profile" altyapısı. Paylaşım oluştur (Eşit, Yüzde, Sabit), Ödeme statüleri, Loglama.
 3.  **v0.2 (Gerçek Hayat & Yolculuk):** Araç profili, Google Maps (Places/Routes), Tahmini/Gerçek tutar farkı hesaplaması.
 4.  **v0.3 (Market ve İçerik):** Fiş fotoğrafı (Sınır 3, max 800kb upload), yorumlaşma, ürün bazlı bölüşüm altyapısı.

@@ -3,11 +3,23 @@ import { create } from 'zustand';
 interface ThemeState {
   isDarkMode: boolean;
   toggleTheme: () => void;
+  setTheme: (isDark: boolean) => void;
   initTheme: () => void;
 }
 
 export const useThemeStore = create<ThemeState>((set) => ({
   isDarkMode: false,
+
+  setTheme: (isDark: boolean) => set(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+    return { isDarkMode: isDark };
+  }),
 
   toggleTheme: () => set((state) => {
     const newMode = !state.isDarkMode;

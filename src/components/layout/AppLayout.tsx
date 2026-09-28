@@ -4,7 +4,7 @@ import { TopNav } from './TopNav';
 
 export const AppLayout = () => {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-950 flex flex-col items-center transition-colors duration-300">
 
       {/* Üst Menü (Sadece Desktop) */}
       <TopNav />

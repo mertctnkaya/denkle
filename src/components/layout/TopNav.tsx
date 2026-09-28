@@ -1,16 +1,27 @@
 import { NavLink } from 'react-router-dom';
 import { Icon } from '../shared/Icon';
 import { useAuthStore } from '../../store/authStore';
+import { useToastStore } from '../../store/toastStore';
 
 export const TopNav = () => {
-  const { profile, user } = useAuthStore();
+  const { profile, user, signOut } = useAuthStore();
+  const { addToast } = useToastStore();
 
   const fullName = profile?.full_name || user?.user_metadata?.full_name || 'Kullanıcı';
   const initial = fullName.charAt(0).toUpperCase();
   const displayName = fullName.split(' ')[0];
 
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      addToast('Başarıyla çıkış yapıldı.', 'info');
+    } catch (error) {
+      addToast('Çıkış yapılırken bir hata oluştu.', 'error');
+    }
+  };
+
   return (
-    <header className="hidden md:flex items-center justify-between w-full h-16 px-8 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
+    <header className="hidden md:flex items-center justify-between w-full h-16 px-8 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 sticky top-0 z-50">
 
       {/* Logo */}
       <div className="flex items-center gap-2">
@@ -31,8 +42,8 @@ export const TopNav = () => {
       </nav>
 
       {/* Sağ Taraf Aksiyonlar */}
-      <div className="flex items-center gap-4">
-        <button className="bg-primary text-white px-5 py-2 rounded-xl font-bold text-sm shadow-md shadow-primary/30 hover:bg-primary-dark active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer">
+      <div className="flex items-center gap-3">
+        <button className="bg-primary text-white px-5 py-2 rounded-xl font-bold text-sm shadow-md shadow-primary/30 hover:bg-primary-dark active:scale-[0.98] transition-all flex items-center gap-2 cursor-pointer mr-2">
           <Icon name="plus" size={18} strokeWidth={2.5} />
           Yeni Ekle
         </button>
@@ -53,6 +64,14 @@ export const TopNav = () => {
             {displayName}
           </span>
         </NavLink>
+
+        <button
+          onClick={handleLogout}
+          title="Çıkış Yap"
+          className="w-10 h-10 rounded-full flex items-center justify-center bg-transparent border-2 border-danger text-danger hover:bg-danger hover:text-white transition-all cursor-pointer group"
+        >
+          <Icon name="logout" size={18} className="text-danger group-hover:text-white transition-colors" />
+        </button>
       </div>
 
     </header>

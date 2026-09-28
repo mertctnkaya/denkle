@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useToastStore } from '../store/toastStore';
+import { useThemeStore } from '../store/themeStore';
 import { Icon } from '../components/shared/Icon';
 import type { IconName } from '../components/shared/Icon';
 
@@ -8,6 +9,7 @@ export const Profile = () => {
   const navigate = useNavigate();
   const { profile, user, signOut } = useAuthStore();
   const { addToast } = useToastStore();
+  const { isDarkMode, setTheme } = useThemeStore();
 
   const fullName = profile?.full_name || user?.user_metadata?.full_name || 'Kullanıcı';
   const initial = fullName.charAt(0).toUpperCase();
@@ -30,6 +32,30 @@ export const Profile = () => {
     { icon: 'help', title: 'Yardım ve Destek', subtitle: 'Sık sorulan sorular' },
   ];
 
+  // AI Fikri: Dinamik Karma Skoru
+  const karmaScore = 85; // İleride veritabanından gelecek
+  const getKarmaColors = (score: number) => {
+    if (score >= 90) return {
+      bg: 'from-success-light/50 to-success-light/10 dark:from-success-dark/20 dark:to-transparent border-success/20',
+      icon: 'text-success-dark dark:text-success',
+      text: 'text-success-dark dark:text-success',
+      message: 'Harika! Borçlarını her zaman vaktinde ödüyorsun.'
+    };
+    if (score >= 70) return {
+      bg: 'from-warning-light/50 to-warning-light/10 dark:from-warning-dark/20 dark:to-transparent border-warning/20',
+      icon: 'text-warning-dark dark:text-warning',
+      text: 'text-warning-dark dark:text-warning',
+      message: 'Fena değil. Borçlarını genelde vaktinde ödüyorsun.'
+    };
+    return {
+      bg: 'from-danger-light/50 to-danger-light/10 dark:from-danger-dark/20 dark:to-transparent border-danger/20',
+      icon: 'text-danger-dark dark:text-danger',
+      text: 'text-danger-dark dark:text-danger',
+      message: 'Dikkat! Borçlarını ödemekte gecikiyorsun.'
+    };
+  };
+  const karma = getKarmaColors(karmaScore);
+
   return (
     <div className="p-6 md:p-0 pt-12 md:pt-6 pb-24 md:pb-6 max-w-2xl mx-auto w-full">
       {/* Üst Kısım: Başlık */}
@@ -44,7 +70,7 @@ export const Profile = () => {
       </div>
 
       {/* Profil Kartı */}
-      <div className="bg-white dark:bg-card-dark rounded-3xl p-6 md:p-8 border border-slate-100 dark:border-slate-800 shadow-sm mb-8 flex items-center gap-6">
+      <div className="bg-white dark:bg-card-dark rounded-3xl p-6 md:p-8 border border-slate-200/60 dark:border-slate-800 shadow-sm mb-8 flex items-center gap-6">
         <div className="w-16 h-16 md:w-20 md:h-20 bg-primary-light dark:bg-primary-dark/30 rounded-2xl flex items-center justify-center text-primary font-bold text-3xl md:text-4xl border-2 border-white dark:border-slate-800 shadow-sm shrink-0 uppercase">
           {initial}
         </div>
@@ -54,28 +80,63 @@ export const Profile = () => {
         </div>
       </div>
 
+      {/* Tema Seçici */}
+      <div className="bg-white dark:bg-card-dark rounded-3xl border border-slate-200/60 dark:border-slate-800 shadow-sm p-4 md:p-5 mb-8 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-xl flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0">
+            <Icon name="moon" size={22} />
+          </div>
+          <div>
+            <h3 className="font-semibold text-slate-900 dark:text-white text-base">Görünüm Modu</h3>
+            <p className="text-sm text-slate-500 mt-0.5">Açık veya Koyu tema seçimi</p>
+          </div>
+        </div>
+
+        {/* Switch Segment */}
+        <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
+          <button
+            onClick={() => setTheme(false)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-sm transition-all duration-300 cursor-pointer ${!isDarkMode
+              ? 'bg-white text-primary shadow-sm'
+              : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+              }`}
+          >
+            Açık
+          </button>
+          <button
+            onClick={() => setTheme(true)}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg font-semibold text-sm transition-all duration-300 cursor-pointer ${isDarkMode
+              ? 'bg-slate-700 text-white shadow-sm'
+              : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+              }`}
+          >
+            Koyu
+          </button>
+        </div>
+      </div>
+
       {/* Karma Puanı (AI Fikri) */}
-      <div className="bg-linear-to-r from-warning-light/50 to-warning-light/10 dark:from-warning-dark/20 dark:to-transparent rounded-3xl p-6 md:p-8 border border-warning/20 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className={`bg-linear-to-r ${karma.bg} rounded-3xl p-6 md:p-8 border mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors duration-300`}>
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <Icon name="star" size={20} className="text-warning-dark dark:text-warning" />
+            <Icon name="star" size={20} className={karma.icon} />
             <p className="font-bold text-lg text-slate-900 dark:text-white">Karma Puanı</p>
           </div>
           <p className="text-sm text-slate-600 dark:text-slate-400 font-medium max-w-sm">
-            Borçlarını vaktinde ödüyorsun. Güvenilirlik skorun yüksek!
+            {karma.message}
           </p>
         </div>
         <div className="text-left md:text-right">
-          <span className="text-4xl font-black text-warning-dark dark:text-warning">%95</span>
+          <span className={`text-4xl font-black ${karma.text}`}>%{karmaScore}</span>
         </div>
       </div>
 
       {/* Menü Listesi */}
-      <div className="bg-white dark:bg-card-dark rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden mb-8">
+      <div className="bg-white dark:bg-card-dark rounded-3xl border border-slate-200/60 dark:border-slate-800 shadow-sm overflow-hidden mb-8">
         {menuItems.map((item, index) => (
           <div
             key={index}
-            className={`group flex items-center p-4 md:p-5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${index !== menuItems.length - 1 ? 'border-b border-slate-100 dark:border-slate-800/50' : ''
+            className={`group flex items-center p-4 md:p-5 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${index !== menuItems.length - 1 ? 'border-b border-slate-200/60 dark:border-slate-800/50' : ''
               }`}
             onClick={() => addToast('Bu özellik yakında eklenecek!', 'info')}
           >
@@ -94,9 +155,9 @@ export const Profile = () => {
       {/* Çıkış Yap Butonu */}
       <button
         onClick={handleLogout}
-        className="w-full py-4 md:py-5 bg-transparent border-2 border-danger text-danger rounded-2xl font-bold text-lg hover:bg-danger hover:text-white hover:shadow-lg hover:shadow-danger/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+        className="w-full py-4 md:py-5 bg-transparent border-2 border-danger text-danger rounded-2xl font-bold text-lg hover:bg-danger hover:text-white hover:shadow-lg hover:shadow-danger/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer group"
       >
-        <Icon name="logout" size={22} />
+        <Icon name="logout" size={22} className="text-danger group-hover:text-white transition-colors" />
         Çıkış Yap
       </button>
 

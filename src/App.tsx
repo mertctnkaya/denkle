@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+﻿import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import { Home } from './pages/Home';
@@ -21,7 +21,7 @@ function App() {
 
   // Auth durumu yükleniyorsa boş bir sayfa (veya spinner) gösterelim
   if (isLoading) {
-    return <div className="min-h-screen bg-slate-50 dark:bg-slate-950" />;
+    return <div className="min-h-screen bg-slate-100 dark:bg-slate-950" />;
   }
 
   // Gerçek oturum durumu

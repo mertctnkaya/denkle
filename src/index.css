@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   /* Fonts */
@@ -24,9 +25,9 @@
   --color-danger-light: #FFE4E6;
   --color-danger-dark: #BE123C;
 
-  --color-warning: #F59E0B;
-  --color-warning-light: #FEF3C7;
-  --color-warning-dark: #D97706;
+  --color-warning: #F97316;
+  --color-warning-light: #FFEDD5;
+  --color-warning-dark: #EA580C;
 
   /* Soft Shadows */
   --shadow-soft: 0 10px 40px -10px rgba(0,0,0,0.08);
