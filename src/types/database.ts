@@ -13,6 +13,7 @@ export type Party = {
   created_by: string;
   is_archived: boolean;
   created_at: string;
+  member_count?: number;
 };
 
 export type PartyMember = {

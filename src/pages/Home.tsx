@@ -1,27 +1,78 @@
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
+import { useToastStore } from '../store/toastStore';
+import { usePartyStore } from '../store/partyStore';
 import { Icon } from '../components/shared/Icon';
 import { Button } from '../components/shared/Button';
+import { Modal } from '../components/shared/Modal';
+import { EmptyState } from '../components/shared/EmptyState';
+
 export const Home = () => {
   const navigate = useNavigate();
   const { profile, user } = useAuthStore();
+  const { parties, fetchParties, createParty, isLoading } = usePartyStore();
+
+  const [isNewGroupModalOpen, setIsNewGroupModalOpen] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+
+  const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
+  const [joinCodeInput, setJoinCodeInput] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
+
+  const { addToast } = useToastStore();
+
+  useEffect(() => {
+    fetchParties();
+  }, [fetchParties]);
 
   const fullName = profile?.full_name || user?.user_metadata?.full_name;
   const initial = fullName ? fullName.charAt(0).toUpperCase() : 'K';
   const displayName = fullName ? fullName.split(' ')[0] : 'Kullanıcı';
 
-  // İleride veritabanından gelecek örnek veriler (Mock Data)
-  const parties = [
-    { id: 1, name: 'Ev Arkadaşları', emoji: '🏠', balance: -340, members: 3 },
-    { id: 2, name: 'İzmir Tatili', emoji: '🌴', balance: 850, members: 5 },
-    { id: 3, name: 'Ofis Kahve', emoji: '☕', balance: 0, members: 8 },
-  ];
+  const handleCreateGroup = async () => {
+    if (!newGroupName.trim()) return;
+    setIsCreating(true);
+    const newId = await createParty(newGroupName.trim());
+    setIsCreating(false);
 
+    const error = usePartyStore.getState().error;
+    if (error) {
+      addToast(error, 'error');
+    } else if (newId) {
+      setIsNewGroupModalOpen(false);
+      setNewGroupName('');
+      addToast('Grup başarıyla oluşturuldu!', 'success');
+      navigate(`/party/${newId}`); // Oluşturunca içine girsin
+    }
+  };
+
+  const handleJoinGroup = async () => {
+    if (joinCodeInput.trim().length !== 6) {
+      addToast('Kod 6 haneli olmalıdır.', 'warning');
+      return;
+    }
+
+    setIsJoining(true);
+    // Henüz joinParty çağırmıyoruz, birazdan ekleyeceğiz
+    const joinedId = await usePartyStore.getState().joinParty(joinCodeInput.trim());
+    setIsJoining(false);
+
+    const error = usePartyStore.getState().error;
+    if (error) {
+      addToast(error, 'error');
+    } else if (joinedId) {
+      setIsJoinModalOpen(false);
+      setJoinCodeInput('');
+      addToast('Gruba başarıyla katıldın!', 'success');
+      navigate(`/party/${joinedId}`);
+    }
+  };
+
+  // İleride veritabanından gelecek örnek veriler (Harcamalar için mock kalsın şimdilik)
   const recentShares = [
     { id: 1, title: 'Migros Alışverişi', group: 'Ev Arkadaşları', emoji: '🛒', amount: -340, status: 'Ödeyeceksin', isDebt: true, time: '2 saat önce' },
-    { id: 2, title: 'Shell Yakıt', group: 'İzmir Tatili', emoji: '⛽', amount: 450, status: 'Alacaksın', isDebt: false, time: 'Dün' },
-    { id: 3, title: 'Akşam Pizzası', group: 'Ev Arkadaşları', emoji: '🍕', amount: -120, status: 'Ödeyeceksin', isDebt: true, time: 'Dün' },
-    { id: 4, title: 'Airbnb Kapora', group: 'İzmir Tatili', emoji: '🏡', amount: 400, status: 'Alacaksın', isDebt: false, time: '3 gün önce' },
   ];
 
   return (
@@ -52,12 +103,12 @@ export const Home = () => {
         <div className="relative z-10 flex flex-row items-center justify-between mb-8">
           <div className="flex-1">
             <p className="text-slate-400 text-sm font-medium mb-1">Alacağın</p>
-            <h2 className="text-2xl md:text-3xl font-bold text-success-light">₺850.00</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-success-light">₺0.00</h2>
           </div>
           <div className="w-px h-12 bg-slate-700 mx-4"></div>
           <div className="flex-1 text-right">
             <p className="text-slate-400 text-sm font-medium mb-1">Ödeyeceğin</p>
-            <h2 className="text-2xl md:text-3xl font-bold text-danger-light">₺460.00</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-danger-light">₺0.00</h2>
           </div>
         </div>
 
@@ -79,40 +130,77 @@ export const Home = () => {
           </button>
         </div>
 
-        <div className="flex overflow-x-auto gap-4 pb-4 custom-scrollbar snap-x -mx-6 px-6 md:mx-0 md:px-0">
-
-          {/* Yeni Grup Ekle Butonu */}
-          <div className="snap-start shrink-0 w-32 h-40 rounded-3xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-            <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-full flex items-center justify-center">
-              <Icon name="plus" size={24} />
-            </div>
-            <span className="font-semibold text-sm text-slate-500">Yeni Grup</span>
+        {isLoading && parties.length === 0 ? (
+          <div className="flex gap-4 overflow-x-auto pb-4">
+            <div className="w-36 h-40 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-3xl shrink-0"></div>
+            <div className="w-36 h-40 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-3xl shrink-0"></div>
           </div>
+        ) : parties.length === 0 ? (
+          <div className="flex flex-col gap-4">
+            <EmptyState
+              icon="users"
+              title="Henüz Grubun Yok"
+              description="Arkadaşlarınla masrafları bölüşmek için hemen yeni bir grup oluştur veya koda katıl."
+              actionLabel="Grup Oluştur"
+              onAction={() => setIsNewGroupModalOpen(true)}
+            />
+            <Button variant="outline" fullWidth onClick={() => setIsJoinModalOpen(true)} className="border-dashed">
+              Bir koda sahip misin? Katıl!
+            </Button>
+          </div>
+        ) : (
+          <div className="flex overflow-x-auto gap-4 pb-4 custom-scrollbar snap-x -mx-6 px-6 md:mx-0 md:px-0">
+            {/* Yeni Grup Ekle Butonu */}
+            <div
+              onClick={() => setIsNewGroupModalOpen(true)}
+              className="snap-start shrink-0 w-32 h-40 rounded-3xl border-2 border-dashed border-slate-300 dark:border-slate-700 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+            >
+              <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-full flex items-center justify-center">
+                <Icon name="plus" size={24} />
+              </div>
+              <span className="font-semibold text-sm text-slate-500">Yeni Grup</span>
+            </div>
 
-          {/* Mevcut Gruplar */}
-          {parties.map((party) => (
-            <div key={party.id} className="snap-start shrink-0 w-36 h-40 soft-card bg-white dark:bg-card-dark rounded-3xl border border-slate-200/60 dark:border-slate-800/50 shadow-sm p-4 flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-95 transition-all group">
-              <div className="flex justify-between items-start">
-                <div className="text-3xl group-hover:scale-110 transition-transform origin-bottom-left">{party.emoji}</div>
-                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full">
-                  <Icon name="users" size={12} className="text-slate-500" />
-                  <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">{party.members}</span>
+            {/* Kod İle Katıl Butonu */}
+            <div
+              onClick={() => setIsJoinModalOpen(true)}
+              className="snap-start shrink-0 w-32 h-40 soft-card bg-slate-100 dark:bg-slate-800/50 rounded-3xl border-0 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+            >
+              <div className="w-12 h-12 bg-white dark:bg-slate-700 text-primary rounded-full flex items-center justify-center shadow-sm">
+                <Icon name="users" size={24} />
+              </div>
+              <span className="font-semibold text-sm text-slate-600 dark:text-slate-400">Koda Katıl</span>
+            </div>
+
+            {/* Mevcut Gruplar */}
+            {parties.map((party) => (
+              <div
+                key={party.id}
+                onClick={() => navigate(`/party/${party.id}`)}
+                className="snap-start shrink-0 w-36 h-40 soft-card bg-white dark:bg-card-dark rounded-3xl border border-slate-200/60 dark:border-slate-800/50 shadow-sm p-4 flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-95 transition-all group"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="text-3xl group-hover:scale-110 transition-transform origin-bottom-left">🏕️</div>
+                  <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full">
+                    <Icon name="users" size={12} className="text-slate-500" />
+                    <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">
+                      {party.member_count || 1}
+                    </span>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-1 mb-1">{party.name}</h4>
+                  <p className="text-xs font-medium text-slate-500">Kod: <span className="font-bold text-primary">{party.join_code}</span></p>
                 </div>
               </div>
-              <div>
-                <h4 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-1 mb-1">{party.name}</h4>
-                <p className={`text-xs font-bold ${party.balance > 0 ? 'text-success' : party.balance < 0 ? 'text-danger' : 'text-slate-500'}`}>
-                  {party.balance > 0 ? `+₺${party.balance}` : party.balance < 0 ? `-₺${Math.abs(party.balance)}` : 'Denk!'}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Aktif Paylaşımlar */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Aktif Paylaşımlar</h3>
+        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Son Hareketler</h3>
         <button
           onClick={() => navigate('/activity')}
           className="text-sm font-semibold text-primary hover:text-primary-dark transition-colors cursor-pointer hidden md:block"
@@ -121,27 +209,98 @@ export const Home = () => {
         </button>
       </div>
 
-      <div className="space-y-3">
-        {recentShares.map((share) => (
-          <div key={share.id} className="soft-card p-4 flex items-center justify-between hover:scale-[1.02] cursor-pointer bg-white dark:bg-card-dark rounded-2xl border border-slate-200/60 dark:border-slate-800/50 shadow-sm group">
-            <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl shrink-0 ${share.isDebt ? 'bg-danger-light/50 dark:bg-danger-dark/20' : 'bg-success-light/50 dark:bg-success-dark/20'}`}>
-                {share.emoji}
+      {parties.length === 0 ? (
+        <div className="soft-card p-6 bg-white dark:bg-card-dark rounded-3xl border border-slate-200/60 dark:border-slate-800/50 shadow-sm text-center">
+          <p className="text-slate-500 dark:text-slate-400 text-sm">Grup kurduktan sonra harcamaların burada görünecek.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {recentShares.map((share) => (
+            <div key={share.id} className="soft-card p-4 flex items-center justify-between hover:scale-[1.02] cursor-pointer bg-white dark:bg-card-dark rounded-2xl border border-slate-200/60 dark:border-slate-800/50 shadow-sm group">
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl shrink-0 ${share.isDebt ? 'bg-danger-light/50 dark:bg-danger-dark/20' : 'bg-success-light/50 dark:bg-success-dark/20'}`}>
+                  {share.emoji}
+                </div>
+                <div>
+                  <p className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-primary transition-colors">{share.title}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{share.group} • {share.time}</p>
+                </div>
               </div>
-              <div>
-                <p className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-primary transition-colors">{share.title}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{share.group} • {share.time}</p>
+              <div className="text-right">
+                <p className={`font-bold text-sm ${share.isDebt ? 'text-danger' : 'text-success'}`}>
+                  {share.isDebt ? '-' : '+'}₺{Math.abs(share.amount).toFixed(2)}
+                </p>
+                <p className="text-[10px] text-slate-400 font-medium mt-1">{share.status}</p>
               </div>
             </div>
-            <div className="text-right">
-              <p className={`font-bold text-sm ${share.isDebt ? 'text-danger' : 'text-success'}`}>
-                {share.isDebt ? '-' : '+'}₺{Math.abs(share.amount).toFixed(2)}
-              </p>
-              <p className="text-[10px] text-slate-400 font-medium mt-1">{share.status}</p>
-            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Yeni Grup Modalı */}
+      <Modal
+        isOpen={isNewGroupModalOpen}
+        onClose={() => setIsNewGroupModalOpen(false)}
+        title="Yeni Grup Oluştur"
+        footer={
+          <div className="flex gap-3">
+            <Button variant="ghost" fullWidth onClick={() => setIsNewGroupModalOpen(false)}>İptal</Button>
+            <Button variant="primary" fullWidth isLoading={isCreating} onClick={handleCreateGroup}>Oluştur</Button>
           </div>
-        ))}
-      </div>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+              Grup Adı
+            </label>
+            <input
+              type="text"
+              value={newGroupName}
+              onChange={(e) => setNewGroupName(e.target.value)}
+              placeholder="Örn: Antalya Tatili, Ev Masrafları..."
+              className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-slate-900 dark:text-white"
+              autoFocus
+            />
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Grup oluşturduktan sonra arkadaşlarınızı davet kodunuzla gruba ekleyebilirsiniz.
+          </p>
+        </div>
+      </Modal>
+
+      {/* Kod ile Katıl Modalı */}
+      <Modal
+        isOpen={isJoinModalOpen}
+        onClose={() => setIsJoinModalOpen(false)}
+        title="Koda Göre Katıl"
+        footer={
+          <div className="flex gap-3">
+            <Button variant="ghost" fullWidth onClick={() => setIsJoinModalOpen(false)}>İptal</Button>
+            <Button variant="primary" fullWidth isLoading={isJoining} onClick={handleJoinGroup}>Katıl</Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+              6 Haneli Davet Kodu
+            </label>
+            <input
+              type="text"
+              value={joinCodeInput}
+              onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
+              placeholder="Örn: 7QG99T"
+              maxLength={6}
+              className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-slate-900 dark:text-white text-center tracking-[0.5em] font-bold uppercase"
+              autoFocus
+            />
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 text-center">
+            Arkadaşından aldığın 6 haneli kodu girerek gruba anında dahil olabilirsin.
+          </p>
+        </div>
+      </Modal>
 
     </div>
   );

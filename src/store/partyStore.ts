@@ -20,6 +20,19 @@ const generateJoinCode = () => {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 };
 
+// Mobil cihazlardan LAN (http://192.168.x.x) ile girildiğinde crypto.randomUUID() undefined döner!
+// Bu yüzden güvenli bir UUID generator (fallback) yazıyoruz.
+const generateUUID = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
 export const usePartyStore = create<PartyState>((set, get) => ({
   parties: [],
   currentParty: null,
@@ -34,13 +47,20 @@ export const usePartyStore = create<PartyState>((set, get) => ({
       if (!user) throw new Error("Giriş yapmanız gerekiyor.");
 
       // Sadece üyesi olduğumuz partileri çek (RLS sayesinde supabase sadece bunları döner)
+      // Üye sayısını da party_members tablosundan count ile alıyoruz.
       const { data, error } = await supabase
         .from('parties')
-        .select('*')
+        .select('*, party_members(count)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      set({ parties: data as Party[] });
+
+      const mappedParties = data.map((p: any) => ({
+        ...p,
+        member_count: p.party_members?.[0]?.count || 1
+      }));
+
+      set({ parties: mappedParties as Party[] });
     } catch (err: any) {
       set({ error: err.message });
     } finally {
@@ -76,31 +96,35 @@ export const usePartyStore = create<PartyState>((set, get) => ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Giriş yapmanız gerekiyor.");
 
+      const partyId = generateUUID();
       const joinCode = generateJoinCode();
 
-      // 1. Partiyi oluştur
-      const { data: party, error: partyError } = await supabase
+      // 1. Partiyi oluştur (RLS Select hatasını önlemek için UUID'yi kendimiz veriyoruz)
+      const { error: partyError } = await supabase
         .from('parties')
-        .insert([{ name, join_code: joinCode, created_by: user.id }])
-        .select()
-        .single();
+        .insert([{ id: partyId, name, join_code: joinCode, created_by: user.id }]);
 
-      if (partyError) throw partyError;
+      if (partyError) {
+        if (partyError.message.includes('fkey')) {
+          throw new Error("Veritabanı ilişkisi hatası (Foreign Key). Profiliniz public.profiles tablosunda yok. (Trigger sorunu). Lütfen SQL scriptinizi kontrol edin.");
+        }
+        throw new Error("Grup oluşturma hatası: " + partyError.message);
+      }
 
       // 2. Kendini kurucu (owner) olarak ekle
       const { error: memberError } = await supabase
         .from('party_members')
         .insert([{
-          party_id: party.id,
+          party_id: partyId,
           profile_id: user.id,
           display_name: user.user_metadata?.full_name || 'Kurucu',
           role: 'owner'
         }]);
 
-      if (memberError) throw memberError;
+      if (memberError) throw new Error("Grup üyesi eklenemedi: " + memberError.message);
 
       await get().fetchParties();
-      return party.id;
+      return partyId;
     } catch (err: any) {
       set({ error: err.message });
       return null;
@@ -116,19 +140,18 @@ export const usePartyStore = create<PartyState>((set, get) => ({
       if (!user) throw new Error("Giriş yapmanız gerekiyor.");
 
       // Partiyi koddan bul
-      const { data: party, error: findError } = await supabase
-        .from('parties')
-        .select('id')
-        .eq('join_code', joinCode.toUpperCase())
-        .single();
+      // Partiyi koddan bul (RLS engeline takılmamak için RPC kullanıyoruz)
+      const { data: partyId, error: findError } = await supabase.rpc('get_party_id_by_code', {
+        code: joinCode.toUpperCase()
+      });
 
-      if (findError || !party) throw new Error("Grup bulunamadı veya kod geçersiz.");
+      if (findError || !partyId) throw new Error("Grup bulunamadı veya kod geçersiz.");
 
       // Üye olarak ekle (RLS engellememeli, policy'yi hatırlayalım)
       const { error: joinError } = await supabase
         .from('party_members')
         .insert([{
-          party_id: party.id,
+          party_id: partyId,
           profile_id: user.id,
           display_name: user.user_metadata?.full_name || 'Üye',
           role: 'member'
@@ -140,7 +163,7 @@ export const usePartyStore = create<PartyState>((set, get) => ({
       }
 
       await get().fetchParties();
-      return party.id;
+      return partyId;
     } catch (err: any) {
       set({ error: err.message });
       return null;
