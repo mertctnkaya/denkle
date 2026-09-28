@@ -1,6 +1,6 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useThemeStore } from '../store/themeStore';
-import { Sun, Moon, ArrowRight, CheckCircle2, Users, PieChart, Wallet } from 'lucide-react';
+import { Sun, Moon, ArrowRight, Users, PieChart, Wallet } from 'lucide-react';
 import { Icon } from '../components/shared/Icon';
 
 export const Landing = () => {
@@ -35,7 +35,7 @@ export const Landing = () => {
           </button>
           <button
             onClick={() => navigate('/auth')}
-            className="text-sm font-bold text-primary hover:text-primary-dark transition-colors"
+            className="text-sm font-bold cursor-pointer text-primary hover:text-primary-dark transition-colors"
           >
             Giriş Yap
           </button>
@@ -65,14 +65,14 @@ export const Landing = () => {
             <div className="flex flex-col gap-3">
               <button
                 onClick={() => alert('Misafir girişi altyapısı hazırlanıyor...')} // Daha sonra anonim auth'a bağlanacak
-                className="w-full py-4 bg-primary text-white rounded-2xl font-bold text-lg shadow-lg shadow-primary/30 hover:bg-primary-dark active:scale-[0.98] transition-all flex justify-center items-center gap-2"
+                className="w-full py-4 cursor-pointer bg-primary text-white rounded-2xl font-bold text-lg shadow-lg shadow-primary/30 hover:bg-primary-dark active:scale-[0.98] transition-all flex justify-center items-center gap-2"
               >
                 Hemen Başla (Misafir)
                 <ArrowRight size={20} />
               </button>
               <button
                 onClick={() => navigate('/auth')}
-                className="w-full py-4 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 rounded-2xl font-bold text-lg shadow-sm border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-[0.98] transition-all"
+                className="w-full py-4 cursor-pointer bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 rounded-2xl font-bold text-lg shadow-sm border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-[0.98] transition-all"
               >
                 Kayıt Ol & Giriş Yap
               </button>
@@ -80,7 +80,7 @@ export const Landing = () => {
 
             <div className="mt-6 flex items-start gap-2 text-left bg-warning-light/30 dark:bg-warning-dark/10 p-4 rounded-xl border border-warning/20">
               <Icon name="info" className="text-warning-dark dark:text-warning-light shrink-0 mt-0.5" size={18} />
-              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+              <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">
                 Misafir olarak başlarsan, ileride dilediğin zaman kayıt olarak tüm geçmişini ve verilerini kalıcı hale getirebilirsin.
               </p>
             </div>
@@ -100,7 +100,7 @@ export const Landing = () => {
 
             <button
               onClick={() => navigate('/auth')}
-              className="px-10 py-5 bg-primary text-white rounded-full font-bold text-xl shadow-xl shadow-primary/30 hover:bg-primary-dark hover:-translate-y-1 active:translate-y-0 transition-all flex items-center gap-2 mx-auto"
+              className="px-10 py-5 cursor-pointer bg-primary text-white rounded-full font-bold text-xl shadow-xl shadow-primary/30 hover:bg-primary-dark hover:-translate-y-1 active:translate-y-0 transition-all flex items-center gap-2 mx-auto"
             >
               Ücretsiz Başla
               <ArrowRight size={24} />

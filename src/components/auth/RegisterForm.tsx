@@ -19,7 +19,7 @@ export const RegisterForm = ({ onSubmit, loading, onSwitchMode }: RegisterFormPr
 
   return (
     <>
-      <div className="mb-10">
+      <div className="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">
           Denkleş<span className="text-primary">.</span>
         </h1>
@@ -28,7 +28,7 @@ export const RegisterForm = ({ onSubmit, loading, onSwitchMode }: RegisterFormPr
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
 
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
@@ -75,20 +75,20 @@ export const RegisterForm = ({ onSubmit, loading, onSwitchMode }: RegisterFormPr
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-4 bg-primary text-white rounded-2xl font-bold text-lg shadow-lg shadow-primary/30 hover:bg-primary-dark active:scale-[0.98] transition-all disabled:opacity-70 flex justify-center items-center mt-2"
+          className="w-full py-4 bg-primary text-white rounded-2xl font-bold text-lg shadow-lg shadow-primary/30 hover:bg-primary-dark active:scale-[0.98] transition-all disabled:opacity-70 flex justify-center items-center mt-2 cursor-pointer"
         >
           {loading ? <Loader2 className="animate-spin" size={24} /> : 'Kayıt Ol'}
         </button>
       </form>
 
-      <div className="mt-8 text-center">
+      <div className="mt-8 text-center animate-in fade-in duration-500 delay-200">
         <p className="text-slate-500 text-sm font-medium">
           Zaten bir hesabın var mı?
         </p>
         <button
           onClick={onSwitchMode}
           type="button"
-          className="mt-2 text-primary font-bold hover:text-primary-dark transition-colors"
+          className="mt-2 text-primary font-bold hover:text-primary-dark transition-colors cursor-pointer"
         >
           Giriş Yap
         </button>

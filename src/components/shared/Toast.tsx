@@ -1,47 +1,53 @@
 import { useToastStore } from '../../store/toastStore';
-import type { ToastType } from '../../store/toastStore';
-import { CheckCircle2, AlertCircle, Info, AlertTriangle, X } from 'lucide-react';
+import type { ToastType, ToastMessage } from '../../store/toastStore';
+import { Icon } from './Icon';
 
+// Sadece border ve özel hafif vurgular, arkaplan tamamen mat (solid) olacak
 const toastStyles: Record<ToastType, string> = {
-  success: 'bg-success-light dark:bg-success-dark/20 text-success-dark dark:text-success-light border-success/20',
-  error: 'bg-danger-light dark:bg-danger-dark/20 text-danger-dark dark:text-danger-light border-danger/20',
-  warning: 'bg-warning-light dark:bg-warning-dark/20 text-warning-dark dark:text-warning-light border-warning/20',
-  info: 'bg-primary-light dark:bg-primary-dark/20 text-primary-dark dark:text-primary-light border-primary/20',
+  success: 'border-emerald-200 dark:border-emerald-500/30',
+  error: 'border-danger-200 dark:border-danger-500/30',
+  warning: 'border-warning/30 dark:border-warning-dark/30',
+  info: 'border-primary/30 dark:border-primary/30',
 };
 
-const ToastIcon = ({ type }: { type: ToastType }) => {
-  switch (type) {
-    case 'success': return <CheckCircle2 size={20} />;
-    case 'error': return <AlertCircle size={20} />;
-    case 'warning': return <AlertTriangle size={20} />;
-    case 'info': return <Info size={20} />;
-  }
+const toastIcons: Record<ToastType, React.ReactNode> = {
+  success: <Icon name="success" size={20} className="text-emerald-500 dark:text-emerald-400 shrink-0" />,
+  error: <Icon name="error" size={20} className="text-danger-500 dark:text-danger-400 shrink-0" />,
+  warning: <Icon name="warning" size={20} className="text-warning-dark dark:text-warning shrink-0" />,
+  info: <Icon name="info" size={20} className="text-primary-dark dark:text-primary-light shrink-0" />,
 };
 
 export const ToastContainer = () => {
   const { toasts, removeToast } = useToastStore();
 
   return (
-    <div className="fixed top-safe pt-4 left-0 right-0 z-100 flex flex-col items-center gap-2 pointer-events-none px-4">
-      {toasts.map((toast) => (
+    // items-center ile içindeki toastların ekranı kaplamayıp içeriği kadar (inline) yer kaplamasını sağlıyoruz
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2 w-full max-w-md pointer-events-none px-4">
+      {toasts.map((toast: ToastMessage) => (
         <div
           key={toast.id}
-          onClick={() => removeToast(toast.id)}
           className={`
-            pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-2xl border shadow-lg cursor-pointer
-            w-full max-w-sm animate-in slide-in-from-top-4 fade-in duration-300
+            pointer-events-auto w-auto max-w-full
+            inline-flex items-center gap-3 py-3 px-5 rounded-2xl border shadow-xl
+            bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100
+            animate-in slide-in-from-top-4 fade-in duration-300
             ${toastStyles[toast.type]}
           `}
+          onClick={() => removeToast(toast.id)}
+          role="alert"
         >
-          <div className="shrink-0">
-            <ToastIcon type={toast.type} />
-          </div>
-          <p className="flex-1 text-sm font-semibold">{toast.message}</p>
+          {toastIcons[toast.type]}
+          <p className="text-sm font-semibold leading-snug wrap-break-word">
+            {toast.message}
+          </p>
           <button
-            onClick={(e) => { e.stopPropagation(); removeToast(toast.id); }}
-            className="opacity-50 hover:opacity-100 transition-opacity"
+            onClick={(e) => {
+              e.stopPropagation();
+              removeToast(toast.id);
+            }}
+            className="shrink-0 opacity-50 hover:opacity-100 transition-opacity ml-1 cursor-pointer"
           >
-            <X size={16} />
+            <Icon name="close" size={16} />
           </button>
         </div>
       ))}

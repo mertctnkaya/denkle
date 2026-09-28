@@ -1,35 +1,40 @@
+import { useNavigate } from 'react-router-dom';
 import { Sun, Moon } from 'lucide-react';
 import { useThemeStore } from '../store/themeStore';
 import { useAuthStore } from '../store/authStore';
 
 export const Home = () => {
+  const navigate = useNavigate();
   const { isDarkMode, toggleTheme } = useThemeStore();
-  const { profile } = useAuthStore();
+  const { profile, user } = useAuthStore();
 
-  // İsmin ilk harfini al, profil yoksa 'K' (Kullanıcı) göster
-  const initial = profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : 'K';
-  const displayName = profile?.full_name ? profile.full_name.split(' ')[0] : 'Kullanıcı';
+  const fullName = profile?.full_name || user?.user_metadata?.full_name;
+  const initial = fullName ? fullName.charAt(0).toUpperCase() : 'K';
+  const displayName = fullName ? fullName.split(' ')[0] : 'Kullanıcı';
 
   return (
     <div className="p-6 pt-12">
       {/* Üst Karşılama Alanı */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <p className="text-sm text-slate-500 font-medium mb-1">Günaydın, {displayName}</p>
+          <p className="text-sm text-slate-500 font-medium mb-1">Hoş geldin, {displayName}</p>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Hesaplar Denk! 🎉</h1>
         </div>
         <div className="flex items-center gap-3">
           {/* Tema Değiştirici Buton */}
           <button
             onClick={toggleTheme}
-            className="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 bg-slate-100 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 bg-slate-100 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
           >
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
 
-          <div className="w-12 h-12 bg-primary-light dark:bg-primary-dark/30 rounded-full flex items-center justify-center text-primary font-bold text-lg border-2 border-white dark:border-slate-800 shadow-sm uppercase">
+          <button
+            onClick={() => navigate('/profile')}
+            className="w-12 h-12 bg-primary-light dark:bg-primary-dark/30 rounded-full flex items-center justify-center text-primary font-bold text-lg border-2 border-white dark:border-slate-800 shadow-sm uppercase cursor-pointer hover:scale-105 active:scale-95 transition-all"
+          >
             {initial}
-          </div>
+          </button>
         </div>
       </div>
 
