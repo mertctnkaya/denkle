@@ -1,4 +1,3 @@
-import React from 'react';
 import { Sun, Moon } from 'lucide-react';
 import { useThemeStore } from '../store/themeStore';
 
@@ -15,13 +14,13 @@ export const Home = () => {
         </div>
         <div className="flex items-center gap-3">
           {/* Tema Değiştirici Buton */}
-          <button 
+          <button
             onClick={toggleTheme}
             className="w-10 h-10 rounded-full flex items-center justify-center text-slate-500 bg-slate-100 dark:bg-slate-800 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
           >
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
-          
+
           <div className="w-12 h-12 bg-primary-light dark:bg-primary-dark/30 rounded-full flex items-center justify-center text-primary font-bold text-lg border-2 border-white dark:border-slate-800 shadow-sm">
             M
           </div>
@@ -29,7 +28,7 @@ export const Home = () => {
       </div>
 
       {/* Özet Kartı (Soft Card) */}
-      <div className="soft-card bg-gradient-to-br from-primary to-primary-dark text-white mb-8 border-0">
+      <div className="soft-card bg-linear-to-br from-primary to-primary-dark text-white mb-8 border-0">
         <div className="flex justify-between items-start mb-6">
           <div>
             <p className="text-primary-light text-sm font-medium mb-1">Toplam Alacağın</p>

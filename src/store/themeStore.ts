@@ -8,7 +8,7 @@ interface ThemeState {
 
 export const useThemeStore = create<ThemeState>((set) => ({
   isDarkMode: false,
-  
+
   toggleTheme: () => set((state) => {
     const newMode = !state.isDarkMode;
     if (newMode) {
@@ -25,15 +25,15 @@ export const useThemeStore = create<ThemeState>((set) => ({
     // Önce localStorage'a bak, yoksa sistem temasına bak
     const storedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
+
     const isDark = storedTheme === 'dark' || (!storedTheme && prefersDark);
-    
+
     if (isDark) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-    
+
     set({ isDarkMode: isDark });
   }
 }));
