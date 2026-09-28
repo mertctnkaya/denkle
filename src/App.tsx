@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { MobileLayout } from './components/layout/MobileLayout';
 import { Home } from './pages/Home';
 import { Auth } from './pages/Auth';
+import { Landing } from './pages/Landing';
 import { NotFound } from './pages/NotFound';
 import { useThemeStore } from './store/themeStore';
 import { useAuthStore } from './store/authStore';
@@ -19,7 +20,7 @@ function App() {
 
   // Auth durumu yükleniyorsa boş bir sayfa (veya spinner) gösterelim
   if (isLoading) {
-    return <div className="min-h-screen bg-background-light dark:bg-background-dark" />;
+    return <div className="min-h-screen bg-slate-50 dark:bg-slate-950" />;
   }
 
   // Gerçek oturum durumu
@@ -30,7 +31,13 @@ function App() {
       <ToastContainer />
       <Routes>
         {!isAuthenticated ? (
-          <Route path="*" element={<Auth />} />
+          <>
+            {/* Giriş yapmamış kullanıcılar için Açılış Sayfası ve Giriş Ekranı */}
+            <Route path="/" element={<Landing />} />
+            <Route path="/auth" element={<Auth />} />
+            {/* Bilinmeyen rotalarda (örn: /parties) giriş yapmadığı için Landing'e atar */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </>
         ) : (
           <Route element={<MobileLayout />}>
             <Route path="/" element={<Home />} />
