@@ -12,7 +12,7 @@ export interface SimplifiedDebt {
 
 export interface SimplificationOptions {
   /**
-   * AI FİKRİ: "Boşver Modu" (Tolerance)
+   * "Boşver Modu" (Tolerance)
    * Eğer iki kişi arasındaki nihai borç belirlediğimiz eşiğin (örneğin 1 TL) altındaysa
    * bunu tahsil edilmeyecek kadar küçük sayıp "Boşver" listesine alabiliriz.
    * Şimdilik varsayılan 0 (Kuruşu kuruşuna tahsilat).
@@ -21,7 +21,7 @@ export interface SimplificationOptions {
 }
 
 /**
- * Denkleş "Borç Sadeleştirme (Debt Simplification) Motoru"
+ * Denkleş "Borç Sadeleştirme Motoru"
  * A -> B'ye 50 öder, B -> C'ye 50 öderse => Sadece A -> C'ye 50 öder şeklinde grafiği optimize eder.
  */
 export const simplifyDebts = (
