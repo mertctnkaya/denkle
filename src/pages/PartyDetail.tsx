@@ -62,6 +62,8 @@ export const PartyDetail = () => {
       const errorMsg = useShareStore.getState().error;
       addToast(errorMsg || 'Harcama eklenirken bir hata oluştu.', 'error');
     }
+
+    return success;
   };
 
   const isLoading = partyLoading || shareLoading;
@@ -246,7 +248,7 @@ export const PartyDetail = () => {
               {computedDebts.map((debt, index) => {
                 const fromMember = members.find(m => m.id === debt.from);
                 const toMember = members.find(m => m.id === debt.to);
-                
+
                 if (!fromMember || !toMember) return null;
 
                 const amIOwing = fromMember.profile_id === user?.id;

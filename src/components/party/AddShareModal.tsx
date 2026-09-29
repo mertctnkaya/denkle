@@ -18,7 +18,7 @@ interface AddShareModalProps {
     participants: string[],
     splitMode: 'equal' | 'percentage' | 'exact' | 'shares',
     customValues?: Record<string, number>
-  ) => Promise<void>;
+  ) => Promise<boolean>;
 }
 
 const CATEGORIES: { id: Share['category']; label: string; icon: IconName; color: string }[] = [
@@ -61,7 +61,7 @@ export const AddShareModal = ({ isOpen, onClose, members, currentUserId, onAdd }
     if (selectedParticipants.length === 0) return;
 
     setIsSubmitting(true);
-    await onAdd(
+    const success = await onAdd(
       title.trim(),
       parseFloat(amount),
       paidBy,
@@ -71,7 +71,11 @@ export const AddShareModal = ({ isOpen, onClose, members, currentUserId, onAdd }
       customValues
     );
     setIsSubmitting(false);
-    handleClose();
+    
+    // Eğer işlem başarılıysa modalı kapat, aksi halde toast mesajı görünecek ve veriler silinmeyecek.
+    if (success) {
+      handleClose();
+    }
   };
 
   const toggleParticipant = (memberId: string) => {
@@ -81,6 +85,22 @@ export const AddShareModal = ({ isOpen, onClose, members, currentUserId, onAdd }
       setSelectedParticipants(prev => [...prev, memberId]);
     }
   };
+
+  const parsedAmount = parseFloat(amount) || 0;
+  
+  const customSum = useMemo(() => {
+    return selectedParticipants.reduce((sum, pid) => sum + (customValues[pid] || 0), 0);
+  }, [customValues, selectedParticipants]);
+
+  const isCustomValuesValid = useMemo(() => {
+    if (splitMode === 'equal') return true;
+    if (splitMode === 'percentage') return Math.abs(customSum - 100) < 0.01;
+    if (splitMode === 'exact') return Math.abs(customSum - parsedAmount) < 0.01;
+    if (splitMode === 'shares') return customSum > 0;
+    return true;
+  }, [splitMode, customSum, parsedAmount]);
+
+  const isFormValid = title.trim() && parsedAmount > 0 && selectedParticipants.length > 0 && isCustomValuesValid;
 
   return (
     <Modal
@@ -95,7 +115,7 @@ export const AddShareModal = ({ isOpen, onClose, members, currentUserId, onAdd }
             fullWidth
             isLoading={isSubmitting}
             onClick={handleSubmit}
-            disabled={!title.trim() || !amount || parseFloat(amount) <= 0 || selectedParticipants.length === 0}
+            disabled={!isFormValid}
           >
             Ekle
           </Button>
@@ -237,9 +257,26 @@ export const AddShareModal = ({ isOpen, onClose, members, currentUserId, onAdd }
           {/* Dinamik Bölüşüm Girdileri (Eşit Değilse) */}
           {splitMode !== 'equal' && selectedParticipants.length > 0 && (
             <div className="mt-4 space-y-2 bg-slate-50 dark:bg-slate-800/30 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-              <p className="text-[10px] text-slate-500 mb-2 uppercase tracking-wider font-bold">
-                {splitMode === 'percentage' ? 'Yüzdeleri Girin (Toplam 100 olmalı)' : splitMode === 'exact' ? 'Tutarları Girin (Toplam harcamaya eşit olmalı)' : 'Kişi Başı Pay Adedi (Örn: 2 porsiyon = 2 pay)'}
-              </p>
+              <div className="flex justify-between items-end mb-2">
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">
+                  {splitMode === 'percentage' ? 'Yüzdeleri Girin' : splitMode === 'exact' ? 'Tutarları Girin' : 'Kişi Başı Pay Adedi'}
+                </p>
+                {splitMode === 'percentage' && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isCustomValuesValid ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
+                    Toplam: %{customSum} / %100
+                  </span>
+                )}
+                {splitMode === 'exact' && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isCustomValuesValid ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
+                    Toplam: ₺{customSum} / ₺{parsedAmount}
+                  </span>
+                )}
+                {splitMode === 'shares' && (
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isCustomValuesValid ? 'bg-primary/10 text-primary' : 'bg-danger/10 text-danger'}`}>
+                    Toplam Pay: {customSum}
+                  </span>
+                )}
+              </div>
               {selectedParticipants.map(pid => {
                 const member = members.find(m => m.id === pid);
                 if (!member) return null;
