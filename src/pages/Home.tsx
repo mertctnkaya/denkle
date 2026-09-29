@@ -177,7 +177,7 @@ export const Home = () => {
               <div
                 key={party.id}
                 onClick={() => navigate(`/party/${party.id}`)}
-                className="snap-start shrink-0 w-36 h-40 soft-card bg-white dark:bg-card-dark rounded-3xl border border-slate-200/60 dark:border-slate-800/50 shadow-sm p-4 flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-95 transition-all group"
+                className="snap-start shrink-0 w-36 h-40 soft-card bg-slate-50 dark:bg-card-dark rounded-3xl border border-slate-200/60 dark:border-slate-800/50 shadow-sm p-4 flex flex-col justify-between cursor-pointer hover:scale-[1.02] active:scale-95 transition-all group"
               >
                 <div className="flex justify-between items-start">
                   <div className="text-3xl group-hover:scale-110 transition-transform origin-bottom-left">🏕️</div>
@@ -221,13 +221,13 @@ export const Home = () => {
       </div>
 
       {parties.length === 0 ? (
-        <div className="soft-card p-6 bg-white dark:bg-card-dark rounded-3xl border border-slate-200/60 dark:border-slate-800/50 shadow-sm text-center">
+        <div className="soft-card p-6 bg-slate-50 dark:bg-card-dark rounded-3xl border border-slate-200/60 dark:border-slate-800/50 shadow-sm text-center">
           <p className="text-slate-500 dark:text-slate-400 text-sm">Grup kurduktan sonra harcamaların burada görünecek.</p>
         </div>
       ) : (
         <div className="space-y-3">
           {recentShares.map((share) => (
-            <div key={share.id} className="soft-card p-4 flex items-center justify-between hover:scale-[1.02] cursor-pointer bg-white dark:bg-card-dark rounded-2xl border border-slate-200/60 dark:border-slate-800/50 shadow-sm group">
+            <div key={share.id} className="soft-card p-4 flex items-center justify-between hover:scale-[1.02] cursor-pointer bg-slate-50 dark:bg-card-dark rounded-2xl border border-slate-200/60 dark:border-slate-800/50 shadow-sm group">
               <div className="flex items-center gap-4">
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl shrink-0 ${share.isDebt ? 'bg-danger-light/50 dark:bg-danger-dark/20' : 'bg-success-light/50 dark:bg-success-dark/20'}`}>
                   {share.emoji}
