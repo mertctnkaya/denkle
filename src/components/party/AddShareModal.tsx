@@ -16,7 +16,8 @@ interface AddShareModalProps {
     paidByMemberId: string,
     category: Share['category'],
     participants: string[],
-    splitMode: 'equal' | 'percentage' | 'exact' | 'shares'
+    splitMode: 'equal' | 'percentage' | 'exact' | 'shares',
+    customValues?: Record<string, number>
   ) => Promise<void>;
 }
 
@@ -32,6 +33,7 @@ export const AddShareModal = ({ isOpen, onClose, members, currentUserId, onAdd }
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<Share['category']>('general');
   const [splitMode, setSplitMode] = useState<'equal' | 'percentage' | 'exact' | 'shares'>('equal');
+  const [customValues, setCustomValues] = useState<Record<string, number>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Bulunduğumuz kullanıcının PartyMember id'sini bul
@@ -48,6 +50,7 @@ export const AddShareModal = ({ isOpen, onClose, members, currentUserId, onAdd }
     setAmount('');
     setCategory('general');
     setSplitMode('equal');
+    setCustomValues({});
     setPaidBy(me?.id || '');
     setSelectedParticipants(members.map(m => m.id));
     onClose();
@@ -64,7 +67,8 @@ export const AddShareModal = ({ isOpen, onClose, members, currentUserId, onAdd }
       paidBy,
       category,
       selectedParticipants,
-      splitMode
+      splitMode,
+      customValues
     );
     setIsSubmitting(false);
     handleClose();
@@ -229,6 +233,39 @@ export const AddShareModal = ({ isOpen, onClose, members, currentUserId, onAdd }
               );
             })}
           </div>
+
+          {/* Dinamik Bölüşüm Girdileri (Eşit Değilse) */}
+          {splitMode !== 'equal' && selectedParticipants.length > 0 && (
+            <div className="mt-4 space-y-2 bg-slate-50 dark:bg-slate-800/30 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+              <p className="text-[10px] text-slate-500 mb-2 uppercase tracking-wider font-bold">
+                {splitMode === 'percentage' ? 'Yüzdeleri Girin (Toplam 100 olmalı)' : splitMode === 'exact' ? 'Tutarları Girin (Toplam harcamaya eşit olmalı)' : 'Kişi Başı Pay Adedi (Örn: 2 porsiyon = 2 pay)'}
+              </p>
+              {selectedParticipants.map(pid => {
+                const member = members.find(m => m.id === pid);
+                if (!member) return null;
+                return (
+                  <div key={pid} className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex-1 truncate">
+                      {member.profile_id === currentUserId ? 'Sen' : member.display_name}
+                    </span>
+                    <div className="flex items-center gap-2 w-32">
+                      <input
+                        type="number"
+                        min="0"
+                        value={customValues[pid] || ''}
+                        onChange={(e) => setCustomValues(prev => ({ ...prev, [pid]: parseFloat(e.target.value) || 0 }))}
+                        className="flex-1 min-w-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-sm text-right font-medium focus:outline-none focus:border-primary text-slate-900 dark:text-white"
+                        placeholder="0"
+                      />
+                      <span className="text-xs text-slate-500 font-bold w-6">
+                        {splitMode === 'percentage' ? '%' : splitMode === 'exact' ? '₺' : 'pay'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
       </div>

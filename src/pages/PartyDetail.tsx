@@ -33,7 +33,8 @@ export const PartyDetail = () => {
     paidByMemberId: string,
     category: Share['category'],
     selectedParticipants: string[],
-    splitMode: 'equal' | 'percentage' | 'exact' | 'shares'
+    splitMode: 'equal' | 'percentage' | 'exact' | 'shares',
+    customValues?: Record<string, number>
   ) => {
     if (!id || !user) return;
 
@@ -49,7 +50,7 @@ export const PartyDetail = () => {
       me.id, // created_by
       title,
       amount,
-      { totalAmount: amount, splitMode, participants: selectedParticipants }, // splitInput
+      { totalAmount: amount, splitMode, participants: selectedParticipants, customValues }, // splitInput
       paidByMemberId,
       category
     );
@@ -58,7 +59,8 @@ export const PartyDetail = () => {
       addToast('Harcama başarıyla eklendi!', 'success');
       setIsAddShareModalOpen(false);
     } else {
-      addToast('Harcama eklenirken bir hata oluştu.', 'error');
+      const errorMsg = useShareStore.getState().error;
+      addToast(errorMsg || 'Harcama eklenirken bir hata oluştu.', 'error');
     }
   };
 
@@ -239,13 +241,64 @@ export const PartyDetail = () => {
             </div>
           )
         ) : (
-          <div className="py-8 flex flex-col items-center justify-center text-center">
-            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-3xl">
-              ⚖️
+          computedDebts && computedDebts.length > 0 ? (
+            <div className="py-4 space-y-3">
+              {computedDebts.map((debt, index) => {
+                const fromMember = members.find(m => m.id === debt.from);
+                const toMember = members.find(m => m.id === debt.to);
+                
+                if (!fromMember || !toMember) return null;
+
+                const amIOwing = fromMember.profile_id === user?.id;
+                const amIOwed = toMember.profile_id === user?.id;
+
+                let iconColor = 'text-slate-400 dark:text-slate-500';
+                let bgColor = 'bg-slate-100 dark:bg-slate-800';
+
+                if (amIOwing) {
+                  iconColor = 'text-danger';
+                  bgColor = 'bg-danger/10';
+                } else if (amIOwed) {
+                  iconColor = 'text-success';
+                  bgColor = 'bg-success/10';
+                }
+
+                return (
+                  <div key={index} className="bg-white dark:bg-slate-800 p-4 rounded-2xl flex items-center gap-4 shadow-sm border border-slate-100 dark:border-slate-700">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${bgColor} ${iconColor}`}>
+                      {/* Placeholder for arrow icon if not in library, let's use standard icons for now */}
+                      <span className="font-bold text-lg">
+                        {amIOwing ? '↗' : amIOwed ? '↙' : '→'}
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-slate-700 dark:text-slate-300">
+                        <span className="font-bold text-slate-900 dark:text-white">
+                          {amIOwing ? 'Sen' : fromMember.display_name}
+                        </span>
+                        {', '}
+                        <span className="font-bold text-slate-900 dark:text-white">
+                          {amIOwed ? 'sana' : `${toMember.display_name}'e`}
+                        </span>
+                        {amIOwing ? ' ödeyeceksin' : ' ödeyecek'}
+                      </p>
+                    </div>
+                    <div className={`text-right shrink-0 font-bold ${amIOwing ? 'text-danger' : amIOwed ? 'text-success' : 'text-slate-900 dark:text-white'}`}>
+                      ₺{debt.amount.toFixed(2)}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <h3 className="text-slate-800 dark:text-slate-100 font-bold mb-2">Hesaplar Denk</h3>
-            <p className="text-slate-500 text-sm max-w-[250px]">Şu an kimsenin kimseye borcu yok. Harika!</p>
-          </div>
+          ) : (
+            <div className="py-8 flex flex-col items-center justify-center text-center">
+              <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-3xl">
+                ⚖️
+              </div>
+              <h3 className="text-slate-800 dark:text-slate-100 font-bold mb-2">Hesaplar Denk</h3>
+              <p className="text-slate-500 text-sm max-w-[250px]">Şu an kimsenin kimseye borcu yok. Harika!</p>
+            </div>
+          )
         )}
       </div>
 
