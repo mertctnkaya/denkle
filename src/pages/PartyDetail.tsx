@@ -36,13 +36,13 @@ export const PartyDetail = () => {
     splitMode: 'equal' | 'percentage' | 'exact' | 'shares',
     customValues?: Record<string, number>
   ) => {
-    if (!id || !user) return;
+    if (!id || !user) return false;
 
     // Geçerli kullanıcının party_member ID'sini bul
     const me = members.find(m => m.profile_id === user.id);
     if (!me) {
       addToast('Bu grupta üye olarak görünmüyorsunuz.', 'error');
-      return;
+      return false;
     }
 
     const success = await addShare(
