@@ -184,6 +184,17 @@ export const usePartyStore = create<PartyState>((set, get) => ({
       if (joinError) {
         // Zaten üyeyse ignore edebiliriz (Supabase unique constraint vs varsa)
         if (joinError.code !== '23505') throw joinError; // 23505: unique violation
+      } else {
+        // Yeni üye başarıyla katıldıysa log at
+        const { data: newMember } = await supabase.from('party_members').select('id, display_name').eq('party_id', partyId).eq('profile_id', user.id).single();
+        if (newMember) {
+          await supabase.from('party_events').insert([{
+            party_id: partyId,
+            actor_id: newMember.id,
+            event_type: 'member_joined',
+            description: `"${newMember.display_name}" gruba katıldı.`
+          }]);
+        }
       }
 
       await get().fetchParties();
@@ -442,6 +453,17 @@ export const usePartyStore = create<PartyState>((set, get) => ({
   leaveParty: async (partyId: string, memberId: string) => {
     set({ isLoading: true, error: null });
     try {
+      // Ayrılmadan hemen önce üye adını alıp log atıyoruz (silinince event'teki actor_id NULL'a düşecek)
+      const { data: leavingMember } = await supabase.from('party_members').select('display_name').eq('id', memberId).single();
+      if (leavingMember) {
+        await supabase.from('party_events').insert([{
+          party_id: partyId,
+          actor_id: memberId,
+          event_type: 'member_left',
+          description: `"${leavingMember.display_name}" gruptan ayrıldı.`
+        }]);
+      }
+
       const { error } = await supabase
         .from('party_members')
         .delete()
