@@ -378,6 +378,7 @@ export const PartyDetail = () => {
 
                 // Text coloring logic
                 const renderDescription = (text: string) => {
+                  if (!text) return null;
                   const parts = text.split(/(".*?"|\d+(?:\.\d+)?\s*TL)/g);
                   return parts.map((part, i) => {
                     if (part.startsWith('"') && part.endsWith('"')) {
@@ -385,10 +386,10 @@ export const PartyDetail = () => {
                       if (['Kurucu', 'Yönetici', 'Üye'].includes(inner)) {
                         let roleColor = 'text-slate-500';
                         if (inner === 'Kurucu') roleColor = 'text-indigo-500 dark:text-indigo-400';
-                        if (inner === 'Yönetici') roleColor = 'text-emerald-500 dark:text-emerald-400';
+                        if (inner === 'Yönetici') roleColor = 'text-orange-500 dark:text-orange-400';
                         return <span key={i} className={`font-semibold ${roleColor}`}>"{inner}"</span>;
                       }
-                      return <span key={i} className="font-semibold text-indigo-500 dark:text-indigo-400">{part}</span>;
+                      return <span key={i} className="font-semibold text-slate-900 dark:text-white">{part}</span>;
                     }
                     if (part.includes('TL')) {
                       const isNegative = event.event_type.includes('deleted') || event.event_type.includes('removed');
@@ -406,7 +407,7 @@ export const PartyDetail = () => {
                     </div>
                     <div className="flex-1 bg-transparent py-1.5">
                       <p className="text-[13px] text-slate-600 dark:text-slate-400 leading-tight">
-                        <strong className="text-indigo-600 dark:text-indigo-400 mr-1">
+                        <strong className="text-slate-900 dark:text-white mr-1">
                           {formattedName}
                         </strong> 
                         {renderDescription(event.description)}
