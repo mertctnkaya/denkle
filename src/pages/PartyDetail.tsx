@@ -7,6 +7,7 @@ import { useToastStore } from '../store/toastStore';
 import { Icon } from '../components/shared/Icon';
 import { Button } from '../components/shared/Button';
 import { Modal } from '../components/shared/Modal';
+import { ConfirmModal } from '../components/shared/ConfirmModal';
 import { AddShareModal } from '../components/party/AddShareModal';
 import { PartyMembersTab } from '../components/party/PartyMembersTab';
 import { ViewShareModal } from '../components/party/ViewShareModal';
@@ -32,6 +33,11 @@ export const PartyDetail = () => {
   const [editingShare, setEditingShare] = useState<Share | null>(null);
   const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+
+  const [isConfirmLeaveOpen, setIsConfirmLeaveOpen] = useState(false);
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [isDeletingParty, setIsDeletingParty] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -160,12 +166,29 @@ export const PartyDetail = () => {
     );
   }
 
-  const handleDeleteParty = async () => {
-    if (!window.confirm('Bu grubu ve içindeki her şeyi KÖKTEN silmek istediğinize emin misiniz? Bu işlem geri alınamaz!')) return;
-    const success = await usePartyStore.getState().deleteParty(currentParty.id);
+  const performDeleteParty = async () => {
+    setIsDeletingParty(true);
+    const { success, errorMsg } = await usePartyStore.getState().deleteParty(currentParty.id);
+    setIsDeletingParty(false);
     if (success) {
       addToast('Grup başarıyla silindi.', 'success');
       navigate('/');
+    } else {
+      addToast(errorMsg || 'Grup silinirken bir hata oluştu.', 'error');
+      setIsConfirmDeleteOpen(false);
+    }
+  };
+
+  const performLeaveParty = async () => {
+    setIsLeaving(true);
+    const { success, errorMsg } = await usePartyStore.getState().leaveParty(currentParty.id, myMember!.id);
+    setIsLeaving(false);
+    if (success) {
+      addToast('Gruptan ayrıldınız.', 'success');
+      navigate('/');
+    } else {
+      addToast(errorMsg || 'Gruptan ayrılırken bir hata oluştu.', 'error');
+      setIsConfirmLeaveOpen(false);
     }
   };
 
@@ -206,7 +229,7 @@ export const PartyDetail = () => {
         </div>
         <div className="flex items-center gap-1">
           <button
-            onClick={async () => {
+            onClick={() => {
               if (myNetBalance !== 0) {
                 addToast(`Gruptan ayrılabilmek için bakiyenizin sıfır olması gerekiyor.`, 'warning');
                 return;
@@ -215,13 +238,7 @@ export const PartyDetail = () => {
                 addToast('Kurucu gruptan ayrılamaz. Önce kuruculuğu devretmelisiniz.', 'error');
                 return;
               }
-              if (!window.confirm('Gruptan ayrılmak istediğinize emin misiniz?')) return;
-
-              const success = await usePartyStore.getState().leaveParty(currentParty.id, myMember!.id);
-              if (success) {
-                addToast('Gruptan ayrıldınız.', 'success');
-                navigate('/');
-              }
+              setIsConfirmLeaveOpen(true);
             }}
             className="w-10 h-10 cursor-pointer flex items-center justify-center rounded-full hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors text-rose-500"
             title="Gruptan Ayrıl"
@@ -231,7 +248,7 @@ export const PartyDetail = () => {
           
           {myMember?.role === 'owner' && (
             <button
-              onClick={handleDeleteParty}
+              onClick={() => setIsConfirmDeleteOpen(true)}
               className="w-10 h-10 cursor-pointer flex items-center justify-center rounded-full hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors text-rose-500"
               title="Grubu Sil"
             >
@@ -667,7 +684,32 @@ export const PartyDetail = () => {
         party={currentParty}
         myMember={myMember!}
         netBalance={myNetBalance}
-        onDeleteParty={handleDeleteParty}
+        onDeleteParty={() => setIsConfirmDeleteOpen(true)}
+        onLeaveParty={() => setIsConfirmLeaveOpen(true)}
+      />
+
+      {/* CONFIRM LEAVE MODAL */}
+      <ConfirmModal
+        isOpen={isConfirmLeaveOpen}
+        onClose={() => setIsConfirmLeaveOpen(false)}
+        onConfirm={performLeaveParty}
+        title="Gruptan Ayrıl"
+        message="Gruptan ayrılmak istediğinize emin misiniz? Bu işlem, geri alınamaz ancak gruptaki geçmişinizi etkilemez."
+        confirmText="Evet, Ayrıl"
+        isDestructive={true}
+        isLoading={isLeaving}
+      />
+
+      {/* CONFIRM DELETE MODAL */}
+      <ConfirmModal
+        isOpen={isConfirmDeleteOpen}
+        onClose={() => setIsConfirmDeleteOpen(false)}
+        onConfirm={performDeleteParty}
+        title="Grubu Kökten Sil"
+        message="Bu grubu ve içindeki tüm harcamaları KÖKTEN silmek istediğinize emin misiniz? Bu işlem geri alınamaz ve gruptaki herkesin verisi silinir!"
+        confirmText="Kökten Sil"
+        isDestructive={true}
+        isLoading={isDeletingParty}
       />
     </div>
   );

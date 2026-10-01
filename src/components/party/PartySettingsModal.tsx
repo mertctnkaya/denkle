@@ -13,9 +13,10 @@ interface PartySettingsModalProps {
   myMember: PartyMember;
   netBalance: number;
   onDeleteParty?: () => void;
+  onLeaveParty: () => void;
 }
 
-export const PartySettingsModal = ({ isOpen, onClose, party, myMember, netBalance, onDeleteParty }: PartySettingsModalProps) => {
+export const PartySettingsModal = ({ isOpen, onClose, party, myMember, netBalance, onDeleteParty, onLeaveParty }: PartySettingsModalProps) => {
   const navigate = useNavigate();
   const { addToast } = useToastStore();
   const { updateParty, leaveParty } = usePartyStore();
@@ -54,7 +55,7 @@ export const PartySettingsModal = ({ isOpen, onClose, party, myMember, netBalanc
     }
   };
 
-  const handleLeave = async () => {
+  const handleLeave = () => {
     if (netBalance !== 0) {
       addToast(`Gruptan ayrılabilmek için bakiyenizin sıfır olması gerekiyor (Mevcut: ${netBalance > 0 ? '+' : ''}${netBalance} TL).`, 'warning');
       return;
@@ -64,21 +65,9 @@ export const PartySettingsModal = ({ isOpen, onClose, party, myMember, netBalanc
       addToast('Kurucu gruptan ayrılamaz. Önce kuruculuğu devretmelisiniz.', 'error');
       return;
     }
-
-    if (!window.confirm('Gruptan ayrılmak istediğinize emin misiniz?')) return;
-
-    setIsLeaving(true);
-    const success = await leaveParty(party.id, myMember.id);
-    setIsLeaving(false);
-
-    if (success) {
-      addToast('Gruptan ayrıldınız.', 'success');
-      onClose();
-      navigate('/');
-    } else {
-      const err = usePartyStore.getState().error;
-      addToast(err || 'Gruptan ayrılırken hata oluştu.', 'error');
-    }
+    
+    onClose();
+    onLeaveParty();
   };
 
   return (
@@ -154,14 +143,10 @@ export const PartySettingsModal = ({ isOpen, onClose, party, myMember, netBalanc
 
         {/* Grubu Sil (Sadece Kurucu) */}
         {isOwner && onDeleteParty && (
-          <div className="pt-2">
-            <button 
-              onClick={onDeleteParty}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-rose-600 bg-rose-50 hover:bg-rose-100 dark:bg-rose-900/20 dark:hover:bg-rose-900/40 dark:text-rose-500 font-bold transition-colors"
-            >
-              <Icon name="trash" size={18} />
+          <div className="">
+            <Button variant="danger" fullWidth onClick={handleLeave} isLoading={isLeaving}>
               Grubu Sil
-            </button>
+            </Button>
           </div>
         )}
 

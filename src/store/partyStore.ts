@@ -19,8 +19,8 @@ interface PartyState {
   updateMemberRole: (partyId: string, memberId: string, newRole: 'owner' | 'admin' | 'member') => Promise<void>;
   removeMember: (partyId: string, memberId: string) => Promise<void>;
   updateParty: (partyId: string, updates: Partial<Party>, actorId?: string) => Promise<boolean>;
-  deleteParty: (partyId: string) => Promise<boolean>;
-  leaveParty: (partyId: string, memberId: string) => Promise<boolean>;
+  deleteParty: (partyId: string) => Promise<{ success: boolean; errorMsg?: string }>;
+  leaveParty: (partyId: string, memberId: string) => Promise<{ success: boolean; errorMsg?: string }>;
 }
 
 const generateJoinCode = () => {
@@ -441,10 +441,9 @@ export const usePartyStore = create<PartyState>((set, get) => ({
       if (user) {
         import('./homeStore').then(m => m.useHomeStore.getState().fetchDashboardData(user.id));
       }
-      return true;
+      return { success: true };
     } catch (err: any) {
-      set({ error: err.message });
-      return false;
+      return { success: false, errorMsg: err.message };
     } finally {
       set({ isLoading: false });
     }
@@ -494,10 +493,9 @@ export const usePartyStore = create<PartyState>((set, get) => ({
         });
       }
       
-      return true;
+      return { success: true };
     } catch (err: any) {
-      set({ error: err.message });
-      return false;
+      return { success: false, errorMsg: err.message };
     } finally {
       set({ isLoading: false });
     }
