@@ -42,7 +42,7 @@ export const PartySettingsModal = ({ isOpen, onClose, party, myMember, netBalanc
 
   const handleToggleArchive = async () => {
     setIsUpdating(true);
-    const success = await updateParty(party.id, { is_archived: !party.is_archived });
+    const success = await updateParty(party.id, { is_archived: !party.is_archived }, myMember.id);
     setIsUpdating(false);
 
     if (success) {

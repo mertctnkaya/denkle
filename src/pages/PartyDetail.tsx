@@ -417,6 +417,7 @@ export const PartyDetail = () => {
                 if (event.event_type.includes('debt_settled')) { eventIcon = 'success'; eventColor = 'text-emerald-500'; }
                 if (event.event_type.includes('role_updated')) { eventIcon = 'shield'; eventColor = 'text-orange-500'; }
                 if (event.event_type.includes('share_deleted')) { eventIcon = 'trash'; eventColor = 'text-rose-500'; }
+                if (event.event_type.includes('archived')) { eventIcon = 'archive'; eventColor = 'text-amber-500'; }
 
                 // Text coloring logic
                 const renderDescription = (text: string) => {

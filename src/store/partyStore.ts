@@ -18,7 +18,7 @@ interface PartyState {
   addShadowMember: (partyId: string, displayName: string) => Promise<void>;
   updateMemberRole: (partyId: string, memberId: string, newRole: 'owner' | 'admin' | 'member') => Promise<void>;
   removeMember: (partyId: string, memberId: string) => Promise<void>;
-  updateParty: (partyId: string, updates: Partial<Party>) => Promise<boolean>;
+  updateParty: (partyId: string, updates: Partial<Party>, actorId?: string) => Promise<boolean>;
   leaveParty: (partyId: string, memberId: string) => Promise<boolean>;
 }
 
@@ -379,7 +379,7 @@ export const usePartyStore = create<PartyState>((set, get) => ({
     }
   },
 
-  updateParty: async (partyId: string, updates: Partial<Party>) => {
+  updateParty: async (partyId: string, updates: Partial<Party>, actorId?: string) => {
     set({ isLoading: true, error: null });
     try {
       const { error } = await supabase
@@ -388,7 +388,18 @@ export const usePartyStore = create<PartyState>((set, get) => ({
         .eq('id', partyId);
       if (error) throw error;
       
+      // LOG ARCHIVE / UNARCHIVE EVENT
+      if (updates.is_archived !== undefined && actorId) {
+        await supabase.from('party_events').insert([{
+          party_id: partyId,
+          actor_id: actorId,
+          event_type: updates.is_archived ? 'party_archived' : 'party_unarchived',
+          description: updates.is_archived ? 'Grup arşivlendi' : 'Grup arşivden çıkarıldı'
+        }]);
+      }
+
       await get().fetchPartyDetails(partyId);
+      await get().fetchEvents(partyId);
       return true;
     } catch (err: any) {
       set({ error: err.message });
