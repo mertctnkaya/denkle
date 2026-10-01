@@ -4,7 +4,6 @@ import { usePartyStore } from '../../store/partyStore';
 import { useToastStore } from '../../store/toastStore';
 import { Modal } from '../shared/Modal';
 import { Button } from '../shared/Button';
-import { useNavigate } from 'react-router-dom';
 
 interface PartySettingsModalProps {
   isOpen: boolean;
@@ -17,13 +16,11 @@ interface PartySettingsModalProps {
 }
 
 export const PartySettingsModal = ({ isOpen, onClose, party, myMember, netBalance, onDeleteParty, onLeaveParty }: PartySettingsModalProps) => {
-  const navigate = useNavigate();
   const { addToast } = useToastStore();
-  const { updateParty, leaveParty } = usePartyStore();
+  const { updateParty } = usePartyStore();
 
   const [partyName, setPartyName] = useState(party.name);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isLeaving, setIsLeaving] = useState(false);
 
   const canEditName = myMember.role === 'owner' || myMember.role === 'admin';
   const isOwner = myMember.role === 'owner';
@@ -133,7 +130,7 @@ export const PartySettingsModal = ({ isOpen, onClose, party, myMember, netBalanc
 
         {/* Gruptan Ayrıl */}
         <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-          <Button variant="danger" fullWidth onClick={handleLeave} isLoading={isLeaving}>
+          <Button variant="danger" fullWidth onClick={handleLeave}>
             Gruptan Ayrıl
           </Button>
           <p className="text-[10px] text-center text-slate-400 mt-2">
@@ -144,7 +141,7 @@ export const PartySettingsModal = ({ isOpen, onClose, party, myMember, netBalanc
         {/* Grubu Sil (Sadece Kurucu) */}
         {isOwner && onDeleteParty && (
           <div className="">
-            <Button variant="danger" fullWidth onClick={handleLeave} isLoading={isLeaving}>
+            <Button variant="danger" fullWidth onClick={() => { onClose(); onDeleteParty(); }}>
               Grubu Sil
             </Button>
           </div>
