@@ -7,6 +7,7 @@ import { Landing } from './pages/Landing';
 import { Profile } from './pages/Profile';
 import { PartyDetail } from './pages/PartyDetail';
 import { NotFound } from './pages/NotFound';
+import { Parties } from './pages/Parties';
 import { useThemeStore } from './store/themeStore';
 import { useAuthStore } from './store/authStore';
 import { ToastContainer } from './components/shared/Toast';
@@ -44,7 +45,7 @@ function App() {
           <Route element={<AppLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/auth" element={<Navigate to="/" replace />} />
-            <Route path="/parties" element={<div className="p-6 pt-12"><h2 className="font-bold text-xl">Gruplar</h2></div>} />
+            <Route path="/parties" element={<Parties />} />
             <Route path="/party/:id" element={<PartyDetail />} />
             <Route path="/activity" element={<div className="p-6 pt-12"><h2 className="font-bold text-xl">Hareketler</h2></div>} />
             <Route path="/profile" element={<Profile />} />

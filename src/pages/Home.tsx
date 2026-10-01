@@ -35,6 +35,8 @@ export const Home = () => {
     }
   }, [user, parties.length, fetchDashboardData]); // partiler eklendikçe dashboard'ı güncelle
 
+  const activeParties = parties.filter(p => !p.is_archived);
+  
   const fullName = profile?.full_name || user?.user_metadata?.full_name;
   const initial = fullName ? fullName.charAt(0).toUpperCase() : 'K';
   const displayName = fullName ? fullName.split(' ')[0] : 'Kullanıcı';
@@ -132,12 +134,12 @@ export const Home = () => {
           </button>
         </div>
 
-        {isLoading && parties.length === 0 ? (
+        {isLoading && activeParties.length === 0 ? (
           <div className="flex gap-4 overflow-x-auto pb-4">
             <div className="w-36 h-40 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-3xl shrink-0"></div>
             <div className="w-36 h-40 bg-slate-100 dark:bg-slate-800 animate-pulse rounded-3xl shrink-0"></div>
           </div>
-        ) : parties.length === 0 ? (
+        ) : activeParties.length === 0 ? (
           <div className="flex flex-col gap-4">
             <EmptyState
               icon="users"
@@ -175,7 +177,7 @@ export const Home = () => {
             </div>
 
             {/* Mevcut Gruplar */}
-            {parties.map((party) => (
+            {activeParties.map((party) => (
               <div
                 key={party.id}
                 onClick={() => navigate(`/party/${party.id}`)}
