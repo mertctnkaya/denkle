@@ -47,7 +47,6 @@ export const useHomeStore = create<HomeState>((set) => ({
       }
 
       const partyIds = myMemberships.map(m => m.party_id);
-      const myMemberIds = myMemberships.map(m => m.id);
 
       // 2. Bu partilere ait bilgileri getir
       const [partiesRes, sharesRes, partsRes, settlementsRes] = await Promise.all([

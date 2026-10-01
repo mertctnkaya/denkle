@@ -4,7 +4,6 @@ import { usePartyStore } from '../../store/partyStore';
 import { useToastStore } from '../../store/toastStore';
 import { Modal } from '../shared/Modal';
 import { Button } from '../shared/Button';
-import { Icon } from '../shared/Icon';
 import { useNavigate } from 'react-router-dom';
 
 interface PartySettingsModalProps {
@@ -107,7 +106,7 @@ export const PartySettingsModal = ({ isOpen, onClose, party, myMember, netBalanc
         {/* Yönetim Modu */}
         <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
           <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Grup Yönetim Tercihleri</h4>
-          
+
           <div className="flex items-center justify-between opacity-60">
             <div>
               <h5 className="font-bold text-sm text-slate-900 dark:text-white">Demokrasi Modu</h5>
