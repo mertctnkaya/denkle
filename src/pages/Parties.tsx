@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePartyStore } from '../store/partyStore';
 import { Icon } from '../components/shared/Icon';
+import { Button } from '../components/shared/Button';
 
 export const Parties = () => {
   const navigate = useNavigate();
@@ -35,18 +36,18 @@ export const Parties = () => {
       </div>
 
       <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-8">
-        
+
         {/* Aktif Gruplar */}
         <div className="space-y-4">
           <h2 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Aktif Gruplar ({activeParties.length})</h2>
-          
+
           {activeParties.length === 0 ? (
             <div className="p-8 text-center bg-slate-50 dark:bg-slate-900/50 rounded-3xl border border-slate-200 dark:border-slate-800">
               <div className="w-16 h-16 bg-slate-200 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
                 <Icon name="users" size={32} />
               </div>
               <p className="text-slate-600 dark:text-slate-400 font-medium">Aktif bir grubunuz bulunmuyor.</p>
-              <button onClick={() => navigate('/')} className="mt-4 text-primary font-bold text-sm">Ana Sayfaya Dön</button>
+              <Button onClick={() => navigate('/')} variant="primary" className="mt-3">Ana Sayfaya Dön</Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -70,7 +71,7 @@ export const Parties = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-6 text-sm font-semibold text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl">
                     <div className="flex items-center gap-2">
                       <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
@@ -98,7 +99,7 @@ export const Parties = () => {
               <Icon name="archive" size={16} />
               Arşivlenmiş Gruplar ({archivedParties.length})
             </h2>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {archivedParties.map(party => (
                 <div
@@ -120,7 +121,7 @@ export const Parties = () => {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-6 text-sm font-semibold text-slate-500 dark:text-slate-400">
                     <div className="flex items-center gap-2 bg-slate-200/50 dark:bg-slate-800 p-2 pr-4 rounded-xl">
                       <div className="w-6 h-6 rounded-full bg-slate-300 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center">

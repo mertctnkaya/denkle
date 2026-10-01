@@ -10,6 +10,8 @@ interface AddShareModalProps {
   onClose: () => void;
   members: PartyMember[];
   currentUserId: string;
+  initialShare?: Share | null;
+  initialParticipants?: any[];
   onAdd: (
     title: string,
     amount: number,
@@ -23,36 +25,68 @@ interface AddShareModalProps {
 
 const CATEGORIES: { id: Share['category']; label: string; icon: IconName; color: string }[] = [
   { id: 'general', label: 'Genel', icon: 'receipt', color: 'bg-slate-100 text-slate-600' },
-  { id: 'fuel', label: 'Yakıt', icon: 'camera', color: 'bg-orange-100 text-orange-600' }, // Todo: add gas-pump icon later, using camera as placeholder
+  { id: 'fuel', label: 'Yakıt', icon: 'camera', color: 'bg-orange-100 text-orange-600' },
   { id: 'restaurant', label: 'Yemek', icon: 'star', color: 'bg-red-100 text-red-600' },
   { id: 'shopping', label: 'Market', icon: 'card', color: 'bg-blue-100 text-blue-600' },
 ];
 
-export const AddShareModal = ({ isOpen, onClose, members, currentUserId, onAdd }: AddShareModalProps) => {
+export const AddShareModal = ({ isOpen, onClose, members, currentUserId, onAdd, initialShare, initialParticipants }: AddShareModalProps) => {
+  const me = useMemo(() => members.find(m => m.profile_id === currentUserId), [members, currentUserId]);
+
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<Share['category']>('general');
   const [splitMode, setSplitMode] = useState<'equal' | 'percentage' | 'exact' | 'shares'>('equal');
   const [customValues, setCustomValues] = useState<Record<string, number>>({});
+  const [paidBy, setPaidBy] = useState<string>(me?.id || '');
+  const [selectedParticipants, setSelectedParticipants] = useState<string[]>(members.map(m => m.id));
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Bulunduğumuz kullanıcının PartyMember id'sini bul
-  const me = useMemo(() => members.find(m => m.profile_id === currentUserId), [members, currentUserId]);
+  // When initialShare is provided, populate the form
+  useMemo(() => {
+    if (isOpen) {
+      if (initialShare && initialParticipants) {
+        setTitle(initialShare.title);
+        setAmount(initialShare.total_amount.toString());
+        setCategory(initialShare.category);
+        setSplitMode(initialShare.split_mode as any);
+        
+        const payer = initialParticipants.find(p => p.paid_amount > 0);
+        setPaidBy(payer?.party_member_id || me?.id || '');
+        
+        const participantsList = initialParticipants.map(p => p.party_member_id);
+        setSelectedParticipants(participantsList);
 
-  const [paidBy, setPaidBy] = useState<string>(me?.id || '');
+        if (initialShare.split_mode !== 'equal') {
+          const cVals: Record<string, number> = {};
+          initialParticipants.forEach(p => {
+            if (initialShare.split_mode === 'exact') {
+              cVals[p.party_member_id] = p.owed_amount;
+            } else if (initialShare.split_mode === 'percentage') {
+              cVals[p.party_member_id] = (p.owed_amount / initialShare.total_amount) * 100;
+            } else if (initialShare.split_mode === 'shares') {
+              // Can't reconstruct exact shares perfectly if they were simplified, so fallback to exact owed_amount
+              // To handle this properly, split_mode 'shares' would need to be stored in metadata. We'll fallback to owed_amount.
+              cVals[p.party_member_id] = p.owed_amount; 
+            }
+          });
+          setCustomValues(cVals);
+        } else {
+          setCustomValues({});
+        }
+      } else {
+        setTitle('');
+        setAmount('');
+        setCategory('general');
+        setSplitMode('equal');
+        setCustomValues({});
+        setPaidBy(me?.id || '');
+        setSelectedParticipants(members.map(m => m.id));
+      }
+    }
+  }, [isOpen, initialShare, initialParticipants, me?.id]);
 
-  // Şimdilik eşit bölüşüm (Herkes dahil)
-  const [selectedParticipants, setSelectedParticipants] = useState<string[]>(members.map(m => m.id));
-
-  // Modal kapandığında state'leri sıfırla
   const handleClose = () => {
-    setTitle('');
-    setAmount('');
-    setCategory('general');
-    setSplitMode('equal');
-    setCustomValues({});
-    setPaidBy(me?.id || '');
-    setSelectedParticipants(members.map(m => m.id));
     onClose();
   };
 
@@ -71,8 +105,7 @@ export const AddShareModal = ({ isOpen, onClose, members, currentUserId, onAdd }
       customValues
     );
     setIsSubmitting(false);
-    
-    // Eğer işlem başarılıysa modalı kapat, aksi halde toast mesajı görünecek ve veriler silinmeyecek.
+
     if (success) {
       handleClose();
     }
@@ -87,7 +120,7 @@ export const AddShareModal = ({ isOpen, onClose, members, currentUserId, onAdd }
   };
 
   const parsedAmount = parseFloat(amount) || 0;
-  
+
   const customSum = useMemo(() => {
     return selectedParticipants.reduce((sum, pid) => sum + (customValues[pid] || 0), 0);
   }, [customValues, selectedParticipants]);
@@ -102,11 +135,13 @@ export const AddShareModal = ({ isOpen, onClose, members, currentUserId, onAdd }
 
   const isFormValid = title.trim() && parsedAmount > 0 && selectedParticipants.length > 0 && isCustomValuesValid;
 
+  const isEditing = !!initialShare;
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Yeni Harcama Ekle"
+      title={isEditing ? "Harcamayı Düzenle" : "Yeni Harcama Ekle"}
       footer={
         <div className="flex gap-3">
           <Button variant="ghost" fullWidth onClick={handleClose}>İptal</Button>
@@ -117,7 +152,7 @@ export const AddShareModal = ({ isOpen, onClose, members, currentUserId, onAdd }
             onClick={handleSubmit}
             disabled={!isFormValid}
           >
-            Ekle
+            {isEditing ? "Güncelle" : "Ekle"}
           </Button>
         </div>
       }
@@ -258,9 +293,16 @@ export const AddShareModal = ({ isOpen, onClose, members, currentUserId, onAdd }
           {splitMode !== 'equal' && selectedParticipants.length > 0 && (
             <div className="mt-4 space-y-2 bg-slate-50 dark:bg-slate-800/30 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
               <div className="flex justify-between items-end mb-2">
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">
-                  {splitMode === 'percentage' ? 'Yüzdeleri Girin' : splitMode === 'exact' ? 'Tutarları Girin' : 'Kişi Başı Pay Adedi'}
-                </p>
+                <div className="flex flex-col">
+                  <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">
+                    {splitMode === 'percentage' ? 'Yüzdeleri Girin' : splitMode === 'exact' ? 'Tutarları Girin' : 'Kişi Başı Pay Adedi'}
+                  </p>
+                  {splitMode === 'shares' && (
+                    <span className="text-[9px] text-slate-400 mt-0.5 normal-case tracking-normal">
+                      Sınırsız pay girebilirsiniz, motor orantılı olarak böler (Örn: 2 ve 1 girilirse 2/3 ve 1/3 olarak hesaplanır).
+                    </span>
+                  )}
+                </div>
                 {splitMode === 'percentage' && (
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isCustomValuesValid ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
                     Toplam: %{customSum} / %100

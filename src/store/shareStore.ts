@@ -16,16 +16,17 @@ interface ShareState {
 
   fetchShares: (partyId: string) => Promise<void>;
   addShare: (
-    partyId: string, 
-    createdByMemberId: string, 
-    title: string, 
-    totalAmount: number, 
+    partyId: string,
+    createdByMemberId: string,
+    title: string,
+    totalAmount: number,
     splitInput: SplitInput, // Hangi mod ve değerler
     paidByMemberId: string, // Kasadan parayı kim çıkarttı?
     category?: Share['category'],
     metadata?: Record<string, any>
   ) => Promise<boolean>;
   settleDebt: (partyId: string, payerMemberId: string, payeeMemberId: string, amount: number) => Promise<boolean>;
+  deleteShare: (shareId: string, partyId: string) => Promise<boolean>;
 }
 
 export const useShareStore = create<ShareState>((set, get) => ({
@@ -40,11 +41,8 @@ export const useShareStore = create<ShareState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const [sharesRes, participantsRes, settlementsRes] = await Promise.all([
-        supabase.from('shares').select('*').eq('party_id', partyId).order('created_at', { ascending: false }),
-        // party'ye ait participantları getirmek için inner join veya share_id IN kullanabiliriz.
-        // Supabase tarafında foreign key ilişkimiz var, ancak en basiti tüm participantları çekmek.
-        // sharesRes geldikten sonra onların ID'lerine göre çekebiliriz:
-        supabase.from('shares').select('id').eq('party_id', partyId),
+        supabase.from('shares').select('*').eq('party_id', partyId).neq('status', 'cancelled').order('created_at', { ascending: false }),
+        supabase.from('shares').select('id').eq('party_id', partyId).neq('status', 'cancelled'),
         supabase.from('settlements').select('*').eq('party_id', partyId).order('created_at', { ascending: false })
       ]);
 
@@ -52,7 +50,7 @@ export const useShareStore = create<ShareState>((set, get) => ({
       if (settlementsRes.error) throw settlementsRes.error;
 
       const shareIds = (participantsRes.data || []).map(s => s.id);
-      
+
       let allParticipants: ShareParticipant[] = [];
       if (shareIds.length > 0) {
         const { data: parts, error: partsErr } = await supabase
@@ -68,7 +66,7 @@ export const useShareStore = create<ShareState>((set, get) => ({
 
       // MOTORLARI ÇALIŞTIR VE NET BORÇLARI HESAPLA
       const rawDebts: RawDebt[] = [];
-      
+
       // 1. Harcamalardan doğan borçlar (Kasadan çıkan para vs Kimin ne kadar borcu olduğu)
       allParticipants.forEach(p => {
         // Eğer kişinin borcu (owed) ödediğinden (paid) büyükse, sisteme net borçludur.
@@ -76,18 +74,18 @@ export const useShareStore = create<ShareState>((set, get) => ({
         // Herkesin yediği tutarı (owed_amount), kasadan parayı çıkaran (paid_amount > 0 olan) kişiye olan borcu olarak yazarız.
         // Örneğin: Mert 300 ödedi (paid=300). Ahmet (owed=100), Mert (owed=100), Ayşe (owed=100).
         // Bu durumda: Ahmet -> Mert'e 100 borçlu, Ayşe -> Mert'e 100 borçlu. Mert -> Mert'e 100 (kendi kendine silinir).
-        
+
         // Bu paylaşımda parayı ödeyen(ler)i bulalım:
         const payersInThisShare = allParticipants.filter(x => x.share_id === p.share_id && x.paid_amount > 0);
-        
+
         // Genelde tek ödeyen vardır, çoklu ödeyen varsa oransal dağılır ama MVP'de tek ödeyen kabul ediyoruz.
         // Basitlik adına, parayı ödeyen ilk kişiyi payee (alacaklı) sayıyoruz.
-        const primaryPayer = payersInThisShare[0]; 
+        const primaryPayer = payersInThisShare[0];
 
         if (primaryPayer && p.owed_amount > 0) {
           rawDebts.push({
-            payer: p.party_member_id, // Borçlu olan (borcunu ödemesi gereken)
-            payee: primaryPayer.party_member_id, // Alacaklı olan (kasadan parayı çıkaran)
+            payer: primaryPayer.party_member_id, // Alacaklı olan (kasadan parayı çıkaran)
+            payee: p.party_member_id, // Başkası adına harcanan (borçlu olan)
             amount: p.owed_amount
           });
         }
@@ -97,8 +95,8 @@ export const useShareStore = create<ShareState>((set, get) => ({
       settlements.forEach(s => {
         if (s.status === 'completed') {
           rawDebts.push({
-            payer: s.payee_id, // Geri ödeme alındığı için alacaklının hanesine eksi yazmak adına ters işlem
-            payee: s.payer_id,
+            payer: s.payer_id, // Borcunu ödeyen kişi kasadan para çıkarmış gibi olur (+)
+            payee: s.payee_id, // Parayı tahsil eden kişinin alacağı düşer (-)
             amount: s.amount
           });
         }
@@ -107,11 +105,11 @@ export const useShareStore = create<ShareState>((set, get) => ({
       // 3. Motoru çalıştır (1 TL altı kusuratları boşver)
       const computedDebts = simplifyDebts(rawDebts, { forgiveThresholdAmount: 1 });
 
-      set({ 
-        shares, 
-        participants: allParticipants, 
+      set({
+        shares,
+        participants: allParticipants,
         settlements,
-        computedDebts 
+        computedDebts
       });
 
     } catch (err: any) {
@@ -159,6 +157,15 @@ export const useShareStore = create<ShareState>((set, get) => ({
 
       if (partError) throw partError;
 
+      // 4. Log event
+      await supabase.from('party_events').insert([{
+        party_id: partyId,
+        actor_id: createdByMemberId,
+        event_type: 'share_created',
+        description: `"${title}" harcamasını ekledi.`,
+        metadata: { share_id: share.id, amount: totalAmount }
+      }]);
+
       // Verileri yenile
       await get().fetchShares(partyId);
       return true;
@@ -184,6 +191,67 @@ export const useShareStore = create<ShareState>((set, get) => ({
         }]);
 
       if (error) throw error;
+
+      // Log event
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: member } = await supabase.from('party_members').select('id, display_name').eq('party_id', partyId).eq('profile_id', user.id).single();
+        if (member) {
+          const isPayer = member.id === payerMemberId;
+          const otherMemberId = isPayer ? payeeMemberId : payerMemberId;
+          const { data: otherMember } = await supabase.from('party_members').select('display_name').eq('id', otherMemberId).single();
+          const otherName = otherMember?.display_name || 'Biri';
+
+          await supabase.from('party_events').insert([{
+            party_id: partyId,
+            actor_id: member.id,
+            event_type: 'debt_settled',
+            description: isPayer ? `"${otherName}" adlı kişiye ${amount} TL ödediğini bildirdi.` : `"${otherName}" adlı kişiden ${amount} TL tahsil ettiğini bildirdi.`,
+            metadata: { amount, payer: payerMemberId, payee: payeeMemberId }
+          }]);
+        }
+      }
+
+      await get().fetchShares(partyId);
+      return true;
+    } catch (err: any) {
+      set({ error: err.message });
+      return false;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  deleteShare: async (shareId, partyId) => {
+    set({ isLoading: true, error: null });
+    try {
+      // Supabase'de gerçek bir delete yapmak RLS kurallarına takılıyor olabilir (hata vermeden 0 satır silebilir).
+      // En güvenli yöntem "soft delete" yani durumunu iptal edildi (cancelled) yapmaktır.
+      const { data, error: shareError } = await supabase
+        .from('shares')
+        .update({ status: 'cancelled' })
+        .eq('id', shareId)
+        .select();
+
+      if (shareError) throw shareError;
+      if (!data || data.length === 0) {
+        throw new Error('Harcama silinemedi. Yetkiniz yok veya RLS izin vermiyor.');
+      }
+
+      // Log event
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: member } = await supabase.from('party_members').select('id').eq('party_id', partyId).eq('profile_id', user.id).single();
+        if (member) {
+          await supabase.from('party_events').insert([{
+            party_id: partyId,
+            actor_id: member.id,
+            event_type: 'share_deleted',
+            description: `"${data[0].title}" harcamasını sildi.`,
+            metadata: { share_id: shareId }
+          }]);
+        }
+      }
 
       await get().fetchShares(partyId);
       return true;

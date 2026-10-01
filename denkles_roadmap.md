@@ -1,4 +1,4 @@
-﻿# 🗺️ Denkleş - MASTER ÜRÜN VİZYONU VE YOL HARİTASI
+# 🗺️ Denkleş - MASTER ÜRÜN VİZYONU VE YOL HARİTASI
 
 > Bu doküman, uygulamanın tüm fikirlerini, 70 maddelik orijinal vizyonunu, UI taslaklarını ve mimari kararlarını eksiksiz barındıran YAŞAYAN BİR ÜRÜN PLANIDIR. Hiçbir detay kırpılmadan buraya işlenmiştir.
 
@@ -59,9 +59,14 @@ Uygulama iki kullanım biçimine dayanır:
 1.  **Geçici Paylaşım:** 4 arkadaş İzmir'e gider. "İzmir 2026" partisi açılır, X7K4P9 koduyla girilir, gezi bitince arşivlenir.
 2.  **Kalıcı Grup:** Ev arkadaşları (Kira, fatura, market her ay döner).
 
-### Hiyerarşi ve Katılım
+### Hiyerarşi, Yönetim Modeli ve Katılım
 
-- **Roller:** Sahip (Grubu siler, atar), Yönetici (Paylaşım oluşturur), Üye (Katılır, öder). Kategori bazlı yetki verilebilir (Market'i sadece ev sahibi açsın).
+- **Yönetim Modeli (Kurucu Otoritesi):** MVP aşamasında karmaşık oylama sistemleri (demokrasi) yerine net bir kurucu otoritesi vardır. İlerleyen aşamalarda (v0.4) opsiyonel "Demokratik Mod" (oylama ile üye çıkarma vb.) eklenebilir.
+- **Roller:** 
+  - **Kurucu (Owner):** Her şeyi yapabilir (üye ekle/çıkar, rol değiştir, harcama sil/düzenle). Kurucu kendini gruptan çıkaramaz, önce kuruculuğu devretmelidir.
+  - **Yönetici (Admin):** Hayalet üye ekle, harcama ekle/sil/düzenle.
+  - **Üye (Member):** Sadece harcama ekle, kendi harcamasını sil, "Ödedim/Tahsil Ettim" onayı ver.
+- **Kuruculuk Devri:** Grup ayarlarından kuruculuk bir başka üyeye devredilebilir. Eski kurucu otomatik admin olur.
 - **Güvenli Katılım:** Kod girilir, Nick seçilir, Parti sahibine "Ahmet katılmak istiyor" onayı gider. Herkes kafasına göre giremez.
 
 ### Temsili (Hayalet) Kullanıcı & Devretme (Claim Profile) Sistemi
@@ -83,6 +88,7 @@ Uygulamanın kalbi. Şu modlar kesinlikle olmalıdır:
 - **Kişi Bazlı Dahil/Hariç:** 4 kişilik grupta yemeği 3 kişi yedi, birinin tiki kaldırılır otomatik 3'e bölünür.
 - **Rastgele (Şanslı Bölüşüm):** 337₺ kahve hesabı sisteme atılır, sistem rastgele (97, 124, 116) dağıtır. Eğlence modudur.
 - **Ürün Bazlı (İleri Aşama):** Mert Pizza (300) + Kola (80), Ali Burger (250). Ortak Patates (90). Sistem otomatik çözer.
+- **Üye Çıkarıldığında Yeniden Dağıtım (Auto-Recalculation):** Bir üye gruptan çıkarıldığında, eğer dahil olduğu "Eşit Bölüşümlü" aktif harcamalar varsa, o kişinin payı otomatik olarak kalan kişilere yeniden dağıtılır (Örn: 3462₺ / 4 kişi iken, 1 kişi çıkarsa sistem 3462₺ / 3 kişi şeklinde otomatik günceller). Yüzde/Sabit/Pay gibi modlarda ise üye direkt çıkarılamaz, "Önce dahil olduğu harcamayı düzenleyin veya silin" uyarısı verilir. Hata payları ve kaybolan bakiye sorunu bu sayede engellenir.
 
 ---
 
@@ -90,6 +96,12 @@ Uygulamanın kalbi. Şu modlar kesinlikle olmalıdır:
 
 Mert Ali'ye 200₺, Ali Mehmet'e 150₺, Mehmet Mert'e 50₺ borçludur.
 Uygulama "Borçları sadeleştir" dediğinde matematiksel olarak netleştirip en az transferle (Mert -> Mehmet vb.) hesabı kapatır.
+
+### Bakiye Dökümü ve Şeffaflık (Balance Breakdown)
+Ana ekrandaki veya grup içindeki net bakiye özetine (Örn: "+₺1731") tıklandığında açılacak bir **Bakiye Detay Modalı** (Breakdown) ile hangi harcamadan ne kadar alacaklı/borçlu olunduğu satır satır şeffafça gösterilir.
+- Örn: "Dizel harcaması -> Sen Ödedin -> +₺2596.50"
+- Örn: "Market alışverişi -> Dahilsin -> -₺150.00"
+Kullanıcılar "+1731"in neyin toplamı olduğunu kafası karışmadan, tek bir dokunuşla öğrenebilmelidir.
 
 ---
 
@@ -107,7 +119,7 @@ Her paylaşım bir mini dosyadır ve uygulamanın sohbet mimarisi iki katmanlıd
 
 - **Gruba Özel Genel Sohbet:** Partinin ana iletişim kanalıdır ("Akşam 8'de çıkıyoruz, eksik var mı?"). WhatsApp gibi canlı (Realtime) çalışır.
 - **Paylaşıma Özel Sohbet (Thread):** 1500₺'lik bir Migros paylaşımı açıldığında, _"O peyniri hesaptan düş"_ tartışması ana sohbeti kirletmez; paylaşımın altındaki kendi spesifik canlı sohbet alanında yapılır. Paylaşım "Ödendi / Kapandı" (Arşivlendi) yapıldığında bu sohbet kilitlenir (Read-only) ve salt okunur arşive kalkar. Yorumlara max 3 fotoğraf eklenebilir.
-- **Ortak Finansal Log (Audit Log):** Finansal sonuç değiştiğinde eski hali yok edilemez. "Ahmet payını %33 -> %40 değiştirdi" silinemez şekilde loglanır.
+- **Ortak Finansal Log (Audit Log / party_events):** Gruptaki her aksiyon (üye ekleme/çıkarma, rol değişimi, harcama ekleme/silme/düzenleme) `party_events` tablosuna loglanır. Finansal sonuç değiştiğinde izi yok edilemez. Bu sayede "Dizel harcaması 3 kişiye yeniden bölüştürüldü" veya "Mert, test1'i gruptan çıkardı" gibi olay kartları akışa (feed) karıştırılarak şeffafça gösterilir.
 
 ---
 
@@ -208,7 +220,7 @@ UI kod tekrarını önlemek ve tasarımı tek merkezden yönetmek için `src/com
 ## 15. TEKNİK MİMARİ VE VERİTABANI
 
 - **Vercel (React+Vite) + Capacitor (Android/iOS) + Supabase** sacayağı. (Vardiyo'dan tamamen ayrı depo ve DB).
-- **Veritabanı Uyarısı:** `participants` verisi asla tek bir JSONB kolonuna doldurulmayacak. İleride sorgu yapabilmek için ilişkisel (`share_participants`) kullanılacak.
+- **Veritabanı Uyarısı:** `participants` verisi asla tek bir JSONB kolonuna doldurulmayacak. İleride sorgu yapabilmek için ilişkisel (`share_participants`) kullanılacak. Aynı şekilde tüm grup işlem geçmişleri şeffaflık adına `party_events` tablosunda tutulacak.
 - **RLS (Güvenlik):** Bütün koruma "Ben bu partinin üyesi miyim?" kontrolüne dayanır. (Supabase Row Level Security).
 - **API Güvenliği:** Google Maps gibi API'ler frontend'de açık bırakılmayacak, Supabase Edge Functions üzerinden çağrılacak.
 
@@ -216,13 +228,21 @@ UI kod tekrarını önlemek ve tasarımı tek merkezden yönetmek için `src/com
 
 ## 16. KESİN FAZLANDIRMA VE GELİŞTİRME YOL HARİTASI
 
-_MVP'de ASLA Olmayacaklar: Navigasyon, canlı konum, OCR, AI, banka متنوعentegrasyonu, arkadaş listesi, halka açık partiler._
+_MVP'de ASLA Olmayacaklar: Navigasyon, canlı konum, OCR, AI, banka entegrasyonu, arkadaş listesi, halka açık partiler._
 
-1.  [x] **Aşama 1 (UI ve Kurulum Tamamlandı, DB Başlayacak):** Supabase tabloları, Typescript pure fonksiyonları (`splitEqually`, `simplifyDebts`), RLS kuralları.
-2.  **v0.1 (MVP - Çekirdek):** Auth, Parti kur, Kod ile katıl, Rol atamaları, Hayalet üye oluşturma ve "Claim Profile" altyapısı. Paylaşım oluştur (Eşit, Yüzde, Sabit), Ödeme statüleri, Loglama.
+1.  [x] **Aşama 0 (Kurulum Tamamlandı):** Vite+React+Tailwind, Supabase tabloları, Typescript pure fonksiyonları (`splitEqually`, `simplifyDebts`), Auth ve UI temelleri.
+2.  **v0.1 (MVP - Çekirdek):** Parti kur, Kod ile katıl, Rol atamaları, Hayalet üye oluşturma ve "Claim Profile" altyapısı. Paylaşım oluştur (Eşit, Yüzde, Sabit, Pay), Ödeme statüleri.
+    - **[YENİ] Üye Çıkarma & Recalculation:** Eşit bölüşümlerde üye çıkınca otomatik yeniden hesaplama.
+    - **[YENİ] Bakiye Dökümü (Breakdown):** Net bakiyeye tıklanınca açılan detaylı "hangi harcamadan ne kadar borcum var" listesi.
+    - **[YENİ] Harcama Düzenleme:** Oluşturulmuş bir harcamayı sonradan düzenleyebilme.
+    - **[YENİ] Kuruculuk Devri:** Kurucunun (owner) yetkisini devretmesi.
+    - **[YENİ] Event Log Altyapısı:** `party_events` tablosunda grup geçmişi tutulması.
 3.  **v0.2 (Gerçek Hayat & Yolculuk):** Araç profili, Google Maps (Places/Routes), Tahmini/Gerçek tutar farkı hesaplaması.
-4.  **v0.3 (Market ve İçerik):** Fiş fotoğrafı (Sınır 3, max 800kb upload), yorumlaşma, ürün bazlı bölüşüm altyapısı.
-5.  **v0.4 (Otomasyon):** Tekrarlayan paylaşımlar, Karma puanı, İstatistikler, Push bildirimleri.
+    - **[YENİ] Grup Ayarları Sayfası** ve Event kartlarının (Logların) UI'da akışa (feed) karıştırılması.
+4.  **v0.3 (Market ve İçerik):** Fiş fotoğrafı (Sınır 3, max 800kb upload), yorumlaşma, ürün bazlı bölüşüm altyapısı (Itemized split).
+5.  **v0.4 (Otomasyon & Analitik):** Tekrarlayan paylaşımlar, Karma puanı, İstatistikler, Push bildirimleri.
+    - **[YENİ] Demokratik Mod:** İsteğe bağlı açılabilen "üye oylamasıyla atma" gibi grup içi demokrasi özellikleri.
+    - **[YENİ] Gelişmiş Analitik:** Kategori bazlı harcama grafikleri.
 6.  **v0.5 (Sosyal & Viral):** Story paylaşım kartları, Davet linkleri, QR Şablonlar, Nudge sistemi.
 7.  **v1.0 (Gerçek Ürün):** Capacitor Android paketi, Premium (RevenueCat) katmanları (OCR vizyonu), Play Store yayın süreçleri.
 
