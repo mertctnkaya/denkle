@@ -426,7 +426,10 @@ export const usePartyStore = create<PartyState>((set, get) => ({
       set({ currentParty: null, members: [], events: [] });
       await get().fetchParties();
       // Ana sayfa loglarını da yenile
-      import('./homeStore').then(m => m.useHomeStore.getState().fetchDashboardData());
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        import('./homeStore').then(m => m.useHomeStore.getState().fetchDashboardData(user.id));
+      }
       return true;
     } catch (err: any) {
       set({ error: err.message });
