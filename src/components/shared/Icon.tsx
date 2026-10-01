@@ -3,14 +3,14 @@ import {
   Home, Users, Plus, Bell, User, Mail, Lock, CheckCircle2,
   AlertCircle, Info, AlertTriangle, X, ChevronLeft, ChevronRight,
   Settings, LogOut, Receipt, Wallet, Camera, Sun, Moon,
-  CreditCard, Shield, HelpCircle, Star, Copy, Calendar
+  CreditCard, Shield, HelpCircle, Star, Copy, Calendar, Trash2, QrCode
 } from 'lucide-react';
 
 export type IconName =
   | 'home' | 'users' | 'plus' | 'bell' | 'user' | 'mail' | 'lock'
   | 'success' | 'error' | 'info' | 'warning' | 'close' | 'back'
   | 'forward' | 'settings' | 'logout' | 'receipt' | 'wallet' | 'camera'
-  | 'sun' | 'moon' | 'card' | 'shield' | 'help' | 'star' | 'copy' | 'calendar';
+  | 'sun' | 'moon' | 'card' | 'shield' | 'help' | 'star' | 'copy' | 'calendar' | 'trash' | 'scan';
 
 const iconMap: Record<IconName, LucideIcon> = {
   home: Home,
@@ -39,7 +39,9 @@ const iconMap: Record<IconName, LucideIcon> = {
   help: HelpCircle,
   star: Star,
   copy: Copy,
-  calendar: Calendar
+  calendar: Calendar,
+  trash: Trash2,
+  scan: QrCode
 };
 
 interface IconProps {

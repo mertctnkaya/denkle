@@ -11,6 +11,7 @@ import { AddShareModal } from '../components/party/AddShareModal';
 import { PartyMembersTab } from '../components/party/PartyMembersTab';
 import { ViewShareModal } from '../components/party/ViewShareModal';
 import { BalanceBreakdownModal } from '../components/party/BalanceBreakdownModal';
+import { PartySettingsModal } from '../components/party/PartySettingsModal';
 import type { Share } from '../types/database';
 
 export const PartyDetail = () => {
@@ -30,6 +31,7 @@ export const PartyDetail = () => {
   const [viewShare, setViewShare] = useState<Share | null>(null);
   const [editingShare, setEditingShare] = useState<Share | null>(null);
   const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -194,7 +196,10 @@ export const PartyDetail = () => {
           </div>
         </div>
 
-        <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300">
+        <button 
+          onClick={() => setIsSettingsModalOpen(true)}
+          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300"
+        >
           <Icon name="settings" size={20} />
         </button>
       </div>
@@ -594,6 +599,15 @@ export const PartyDetail = () => {
           setIsBreakdownModalOpen(false);
           setViewShare(share);
         }}
+      />
+
+      {/* PARTY SETTINGS MODAL */}
+      <PartySettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        party={currentParty}
+        myMember={myMember!}
+        netBalance={myNetBalance}
       />
     </div>
   );

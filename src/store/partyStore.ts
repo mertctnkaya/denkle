@@ -18,6 +18,8 @@ interface PartyState {
   addShadowMember: (partyId: string, displayName: string) => Promise<void>;
   updateMemberRole: (partyId: string, memberId: string, newRole: 'owner' | 'admin' | 'member') => Promise<void>;
   removeMember: (partyId: string, memberId: string) => Promise<void>;
+  updateParty: (partyId: string, updates: Partial<Party>) => Promise<boolean>;
+  leaveParty: (partyId: string, memberId: string) => Promise<boolean>;
 }
 
 const generateJoinCode = () => {
@@ -372,6 +374,44 @@ export const usePartyStore = create<PartyState>((set, get) => ({
     } catch (err: any) {
       set({ error: err.message });
       console.error("Remove Member Error:", err);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  updateParty: async (partyId: string, updates: Partial<Party>) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { error } = await supabase
+        .from('parties')
+        .update(updates)
+        .eq('id', partyId);
+      if (error) throw error;
+      
+      await get().fetchPartyDetails(partyId);
+      return true;
+    } catch (err: any) {
+      set({ error: err.message });
+      return false;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  leaveParty: async (partyId: string, memberId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const { error } = await supabase
+        .from('party_members')
+        .delete()
+        .eq('id', memberId)
+        .eq('party_id', partyId);
+      
+      if (error) throw error;
+      return true;
+    } catch (err: any) {
+      set({ error: err.message });
+      return false;
     } finally {
       set({ isLoading: false });
     }
