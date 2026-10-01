@@ -6,26 +6,45 @@ import { useAuthStore } from '../store/authStore';
 import { useToastStore } from '../store/toastStore';
 import { Icon } from '../components/shared/Icon';
 import { Button } from '../components/shared/Button';
+import { Modal } from '../components/shared/Modal';
 import { AddShareModal } from '../components/party/AddShareModal';
+import { PartyMembersTab } from '../components/party/PartyMembersTab';
+import { ViewShareModal } from '../components/party/ViewShareModal';
+import { BalanceBreakdownModal } from '../components/party/BalanceBreakdownModal';
 import type { Share } from '../types/database';
 
 export const PartyDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { currentParty, members, fetchPartyDetails, isLoading: partyLoading, error: partyError } = usePartyStore();
+  const { currentParty, members, events, fetchPartyDetails, fetchEvents, isLoading: partyLoading, error: partyError } = usePartyStore();
   const { shares, participants, computedDebts, fetchShares, addShare, isLoading: shareLoading } = useShareStore();
   const { user } = useAuthStore();
   const { addToast } = useToastStore();
 
-  const [activeTab, setActiveTab] = useState<'feed' | 'balances'>('feed');
+  const [activeTab, setActiveTab] = useState<'feed' | 'balances' | 'members' | 'history'>('feed');
   const [isAddShareModalOpen, setIsAddShareModalOpen] = useState(false);
+  const [shareToDelete, setShareToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [settleDebtModal, setSettleDebtModal] = useState<{ payer: string, payee: string, amount: number } | null>(null);
+  const [isSettling, setIsSettling] = useState(false);
+  const [viewShare, setViewShare] = useState<Share | null>(null);
+  const [editingShare, setEditingShare] = useState<Share | null>(null);
+  const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
       fetchPartyDetails(id);
       fetchShares(id);
+      fetchEvents(id);
     }
-  }, [id, fetchPartyDetails, fetchShares]);
+  }, [id, fetchPartyDetails, fetchShares, fetchEvents]);
+
+  // Refresh events when shares or members change (due to actions like addShare, settleDebt, removeMember)
+  useEffect(() => {
+    if (id) {
+      fetchEvents(id);
+    }
+  }, [id, shares.length, members.length, fetchEvents]);
 
   const handleAddShare = async (
     title: string,
@@ -45,6 +64,11 @@ export const PartyDetail = () => {
       return false;
     }
 
+    if (editingShare) {
+      const { deleteShare } = useShareStore.getState();
+      await deleteShare(editingShare.id, id);
+    }
+
     const success = await addShare(
       id,
       me.id, // created_by
@@ -56,7 +80,8 @@ export const PartyDetail = () => {
     );
 
     if (success) {
-      addToast('Harcama başarıyla eklendi!', 'success');
+      addToast(editingShare ? 'Harcama başarıyla güncellendi!' : 'Harcama başarıyla eklendi!', 'success');
+      setEditingShare(null);
       setIsAddShareModalOpen(false);
     } else {
       const errorMsg = useShareStore.getState().error;
@@ -64,6 +89,36 @@ export const PartyDetail = () => {
     }
 
     return success;
+  };
+
+  const handleDeleteShare = async () => {
+    if (!shareToDelete || !id) return;
+    setIsDeleting(true);
+    const success = await useShareStore.getState().deleteShare(shareToDelete, id);
+    setIsDeleting(false);
+    setShareToDelete(null);
+
+    if (success) {
+      addToast('Harcama silindi', 'success');
+    } else {
+      const errorMsg = useShareStore.getState().error;
+      addToast(errorMsg || 'Silinirken hata oluştu', 'error');
+    }
+  };
+
+  const handleSettleDebt = async () => {
+    if (!settleDebtModal || !id) return;
+    setIsSettling(true);
+    const success = await useShareStore.getState().settleDebt(id, settleDebtModal.payer, settleDebtModal.payee, settleDebtModal.amount);
+    setIsSettling(false);
+    setSettleDebtModal(null);
+
+    if (success) {
+      addToast('Ödeme kaydedildi!', 'success');
+    } else {
+      const errorMsg = useShareStore.getState().error;
+      addToast(errorMsg || 'Ödeme kaydedilirken hata oluştu', 'error');
+    }
   };
 
   const isLoading = partyLoading || shareLoading;
@@ -88,19 +143,20 @@ export const PartyDetail = () => {
     );
   }
 
+  const myMember = (members || []).find(m => m.profile_id === user?.id);
+
   const myNetBalance = useMemo(() => {
     let balance = 0;
-    const me = members.find(m => m.profile_id === user?.id);
-    if (me && computedDebts) {
+    if (myMember && computedDebts) {
       computedDebts.forEach(debt => {
         // Ben borçluysam (ödeyeceğim) eksiye
-        if (debt.from === me.id) balance -= debt.amount;
+        if (debt.from === myMember.id) balance -= debt.amount;
         // Ben alacaklıysam (bana ödenecek) artıya
-        if (debt.to === me.id) balance += debt.amount;
+        if (debt.to === myMember.id) balance += debt.amount;
       });
     }
     return balance;
-  }, [members, user?.id, computedDebts]);
+  }, [myMember, computedDebts]);
 
   const isPositive = myNetBalance > 0;
 
@@ -149,22 +205,29 @@ export const PartyDetail = () => {
           <div className="relative z-10 flex flex-col gap-4">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-slate-400 text-sm font-medium mb-1">Senin Durumun</p>
-                <div className="flex items-end gap-2">
-                  <h2 className={`text-3xl font-bold ${myNetBalance === 0 ? 'text-white' : isPositive ? 'text-success-light' : 'text-danger-light'}`}>
+                <p className="text-slate-400 text-sm font-medium mb-1 flex items-center gap-2">
+                  Senin Durumun
+                  <Icon name="forward" size={14} className="opacity-50" />
+                </p>
+                <div
+                  className="flex items-end gap-2 cursor-pointer group"
+                  onClick={() => setIsBreakdownModalOpen(true)}
+                  title="Bakiye dökümünü gör"
+                >
+                  <h2 className={`text-3xl font-bold transition-transform group-hover:scale-105 origin-left ${myNetBalance === 0 ? 'text-slate-400' : isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {myNetBalance === 0 ? 'Ödeştiniz' : `${isPositive ? '+' : '-'}₺${Math.abs(myNetBalance).toFixed(2)}`}
                   </h2>
                 </div>
               </div>
               <div className="flex -space-x-3">
-                {members.slice(0, 4).map((m) => (
+                {(members || []).slice(0, 4).map((m) => (
                   <div key={m.id} className="w-10 h-10 rounded-full border-2 border-slate-800 bg-primary-light text-primary-dark font-bold text-sm flex items-center justify-center uppercase shadow-sm">
                     {m.display_name.charAt(0)}
                   </div>
                 ))}
-                {members.length > 4 && (
+                {(members || []).length > 4 && (
                   <div className="w-10 h-10 rounded-full border-2 border-slate-800 bg-slate-700 text-white font-bold text-xs flex items-center justify-center shadow-sm">
-                    +{members.length - 4}
+                    +{(members || []).length - 4}
                   </div>
                 )}
               </div>
@@ -182,15 +245,27 @@ export const PartyDetail = () => {
         <div className="flex bg-slate-200/50 dark:bg-slate-800/50 p-1 rounded-xl">
           <button
             onClick={() => setActiveTab('feed')}
-            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'feed' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+            className={`flex-1 py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${activeTab === 'feed' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
           >
-            Harcama Akışı
+            Harcamalar
           </button>
           <button
             onClick={() => setActiveTab('balances')}
-            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'balances' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+            className={`flex-1 py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${activeTab === 'balances' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
           >
-            Hesaplaşma (Kim Kime)
+            Hesaplaşma
+          </button>
+          <button
+            onClick={() => setActiveTab('members')}
+            className={`flex-1 py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${activeTab === 'members' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+          >
+            Üyeler
+          </button>
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`flex-1 py-2 text-xs md:text-sm font-bold rounded-lg transition-all ${activeTab === 'history' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+          >
+            Geçmiş
           </button>
         </div>
       </div>
@@ -198,19 +273,19 @@ export const PartyDetail = () => {
       {/* 4. İÇERİK ALANI */}
       <div className="flex-1 px-4 md:px-6 overflow-y-auto">
         {activeTab === 'feed' ? (
-          shares.length === 0 ? (
+          (shares || []).length === 0 ? (
             <div className="py-8 flex flex-col items-center justify-center text-center">
               <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-3xl">
                 💸
               </div>
               <h3 className="text-slate-800 dark:text-slate-100 font-bold mb-2">Henüz Harcama Yok</h3>
-              <p className="text-slate-500 text-sm max-w-[250px]">Gruptaki ilk harcamayı sen ekle ve hesapları denkleştirmeye başla.</p>
+              <p className="text-slate-500 text-sm max-w-62.5">Gruptaki ilk harcamayı sen ekle ve hesapları denkleştirmeye başla.</p>
             </div>
           ) : (
             <div className="py-4 space-y-3">
-              {shares.map(share => {
+              {(shares || []).map(share => {
                 const payerParticipant = participants.find(p => p.share_id === share.id && p.paid_amount > 0);
-                const payerMember = members.find(m => m.id === payerParticipant?.party_member_id);
+                const payerMember = (members || []).find(m => m.id === payerParticipant?.party_member_id);
 
                 // Kategori ikonunu belirle
                 let catIcon: string = 'receipt';
@@ -218,23 +293,55 @@ export const PartyDetail = () => {
                 if (share.category === 'restaurant') catIcon = 'star';
                 if (share.category === 'shopping') catIcon = 'card';
 
+                const splitModeLabels = {
+                  equal: 'Eşit',
+                  percentage: '%',
+                  shares: 'Pay',
+                  exact: 'Tam Tutar'
+                };
+                const splitLabel = splitModeLabels[share.split_mode as keyof typeof splitModeLabels] || share.split_mode;
+
                 return (
-                  <div key={share.id} className="bg-white dark:bg-slate-800 p-4 rounded-2xl flex items-center gap-4 shadow-sm border border-slate-100 dark:border-slate-700">
+                  <div
+                    key={`share-${share.id}`}
+                    onClick={() => setViewShare(share)}
+                    className="relative bg-white dark:bg-slate-800 p-4 rounded-2xl flex items-center gap-4 shadow-sm border border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/80 transition-colors"
+                  >
                     <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0">
                       <Icon name={catIcon as any} size={24} />
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">{share.title}</h4>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        <span className="font-semibold text-slate-700 dark:text-slate-300">
-                          {payerMember?.profile_id === user?.id ? 'Sen' : payerMember?.display_name || 'Biri'}
-                        </span> ödedi
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm pr-6">{share.title}</h4>
+                      <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
+                        <span>
+                          <span className="font-semibold text-slate-700 dark:text-slate-300">
+                            {payerMember?.profile_id === user?.id ? 'Sen' : payerMember?.display_name || 'Biri'}
+                          </span> ödedi
+                        </span>
+                        <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                        <span className="font-semibold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wider">
+                          {splitLabel}
+                        </span>
                       </p>
                     </div>
-                    <div className="text-right shrink-0">
-                      <div className="font-bold text-slate-900 dark:text-white">₺{share.total_amount.toFixed(2)}</div>
-                      <div className="text-[10px] text-slate-400 mt-1">
-                        {new Date(share.created_at).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' })}
+                    <div className="text-right shrink-0 flex flex-col items-end justify-center">
+                      <div className="flex items-center gap-2">
+                        <div className="font-bold text-slate-900 dark:text-white">₺{share.total_amount.toFixed(2)}</div>
+                        {(myMember?.role === 'owner' || myMember?.role === 'admin' || share.created_by === myMember?.id) && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShareToDelete(share.id);
+                            }}
+                            className="text-slate-300 dark:text-slate-600 hover:text-danger hover:bg-danger/10 p-1.5 rounded-lg transition-colors cursor-pointer"
+                            title="Sil"
+                          >
+                            <Icon name="trash" size={16} />
+                          </button>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-slate-400 mt-1 pr-9">
+                        {new Date(share.created_at).toLocaleString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
                   </div>
@@ -242,12 +349,83 @@ export const PartyDetail = () => {
               })}
             </div>
           )
-        ) : (
+        ) : activeTab === 'history' ? (
+          (events || []).length === 0 ? (
+            <div className="py-8 flex flex-col items-center justify-center text-center">
+              <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4 text-3xl">
+                📋
+              </div>
+              <h3 className="text-slate-800 dark:text-slate-100 font-bold mb-2">Geçmiş İşlem Yok</h3>
+              <p className="text-slate-500 text-sm max-w-62.5">Grupta henüz kaydedilen bir işlem bulunmuyor.</p>
+            </div>
+          ) : (
+            <div className="py-4 space-y-3 relative before:content-[''] before:absolute before:top-4 before:bottom-4 before:left-6 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
+              {(events || []).map(event => {
+                const actor = (members || []).find(m => m.id === event.actor_id);
+                const isMe = actor?.profile_id === user?.id;
+                const displayName = actor?.display_name || 'Biri';
+                const formattedName = isMe ? `${displayName} (Sen)` : displayName;
+
+                let eventIcon = 'info';
+                let eventColor = 'text-slate-500';
+                let eventBg = 'bg-slate-100 dark:bg-slate-800';
+
+                if (event.event_type.includes('member_added')) { eventIcon = 'plus'; eventColor = 'text-emerald-500'; }
+                if (event.event_type.includes('member_removed')) { eventIcon = 'close'; eventColor = 'text-rose-500'; }
+                if (event.event_type.includes('debt_settled')) { eventIcon = 'success'; eventColor = 'text-emerald-500'; }
+                if (event.event_type.includes('role_updated')) { eventIcon = 'shield'; eventColor = 'text-orange-500'; }
+                if (event.event_type.includes('share_deleted')) { eventIcon = 'trash'; eventColor = 'text-rose-500'; }
+
+                // Text coloring logic
+                const renderDescription = (text: string) => {
+                  const parts = text.split(/(".*?"|\d+(?:\.\d+)?\s*TL)/g);
+                  return parts.map((part, i) => {
+                    if (part.startsWith('"') && part.endsWith('"')) {
+                      const inner = part.slice(1, -1);
+                      if (['Kurucu', 'Yönetici', 'Üye'].includes(inner)) {
+                        let roleColor = 'text-slate-500';
+                        if (inner === 'Kurucu') roleColor = 'text-indigo-500 dark:text-indigo-400';
+                        if (inner === 'Yönetici') roleColor = 'text-emerald-500 dark:text-emerald-400';
+                        return <span key={i} className={`font-semibold ${roleColor}`}>"{inner}"</span>;
+                      }
+                      return <span key={i} className="font-semibold text-indigo-500 dark:text-indigo-400">{part}</span>;
+                    }
+                    if (part.includes('TL')) {
+                      const isNegative = event.event_type.includes('deleted') || event.event_type.includes('removed');
+                      const moneyColor = isNegative ? 'text-rose-500 dark:text-rose-400' : 'text-emerald-500 dark:text-emerald-400';
+                      return <span key={i} className={`font-bold ${moneyColor}`}>{part}</span>;
+                    }
+                    return <span key={i}>{part}</span>;
+                  });
+                };
+
+                return (
+                  <div key={`event-${event.id}`} className="relative flex items-start gap-4 ml-2 z-10 py-1">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-[3px] border-slate-50 dark:border-slate-950 ${eventBg} ${eventColor} mt-1`}>
+                      <Icon name={eventIcon as any} size={14} strokeWidth={3} />
+                    </div>
+                    <div className="flex-1 bg-transparent py-1.5">
+                      <p className="text-[13px] text-slate-600 dark:text-slate-400 leading-tight">
+                        <strong className="text-indigo-600 dark:text-indigo-400 mr-1">
+                          {formattedName}
+                        </strong> 
+                        {renderDescription(event.description)}
+                      </p>
+                      <span className="text-[10px] text-slate-400 mt-1 block">
+                        {new Date(event.created_at).toLocaleString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )
+        ) : activeTab === 'balances' ? (
           computedDebts && computedDebts.length > 0 ? (
             <div className="py-4 space-y-3">
               {computedDebts.map((debt, index) => {
-                const fromMember = members.find(m => m.id === debt.from);
-                const toMember = members.find(m => m.id === debt.to);
+                const fromMember = (members || []).find(m => m.id === debt.from);
+                const toMember = (members || []).find(m => m.id === debt.to);
 
                 if (!fromMember || !toMember) return null;
 
@@ -258,11 +436,11 @@ export const PartyDetail = () => {
                 let bgColor = 'bg-slate-100 dark:bg-slate-800';
 
                 if (amIOwing) {
-                  iconColor = 'text-danger';
-                  bgColor = 'bg-danger/10';
+                  iconColor = 'text-rose-500';
+                  bgColor = 'bg-rose-500/10';
                 } else if (amIOwed) {
-                  iconColor = 'text-success';
-                  bgColor = 'bg-success/10';
+                  iconColor = 'text-emerald-500';
+                  bgColor = 'bg-emerald-500/10';
                 }
 
                 return (
@@ -285,8 +463,18 @@ export const PartyDetail = () => {
                         {amIOwing ? ' ödeyeceksin' : ' ödeyecek'}
                       </p>
                     </div>
-                    <div className={`text-right shrink-0 font-bold ${amIOwing ? 'text-danger' : amIOwed ? 'text-success' : 'text-slate-900 dark:text-white'}`}>
-                      ₺{debt.amount.toFixed(2)}
+                    <div className="text-right shrink-0 flex flex-col items-end gap-2">
+                      <span className={`font-bold ${amIOwing ? 'text-rose-500' : amIOwed ? 'text-emerald-500' : 'text-slate-900 dark:text-white'}`}>
+                        ₺{debt.amount.toFixed(2)}
+                      </span>
+                      {(amIOwing || amIOwed) && (
+                        <button
+                          onClick={() => setSettleDebtModal({ payer: debt.from, payee: debt.to, amount: debt.amount })}
+                          className={`text-xs px-3 py-1.5 rounded-lg font-bold cursor-pointer transition-colors ${amIOwing ? 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400'}`}
+                        >
+                          {amIOwing ? 'Ödedim' : 'Tahsil Ettim'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -298,10 +486,12 @@ export const PartyDetail = () => {
                 ⚖️
               </div>
               <h3 className="text-slate-800 dark:text-slate-100 font-bold mb-2">Hesaplar Denk</h3>
-              <p className="text-slate-500 text-sm max-w-[250px]">Şu an kimsenin kimseye borcu yok. Harika!</p>
+              <p className="text-slate-500 text-sm max-w-62.5">Şu an kimsenin kimseye borcu yok. Harika!</p>
             </div>
           )
-        )}
+        ) : activeTab === 'members' ? (
+          <PartyMembersTab party={currentParty} members={members} />
+        ) : null}
       </div>
 
       {/* 5. FLOATING ACTION BUTTON (Yeni Harcama) */}
@@ -315,16 +505,95 @@ export const PartyDetail = () => {
         </button>
       </div>
 
-      {/* Yeni Harcama Modalı */}
+      {/* Yeni / Düzenle Harcama Modalı */}
       {user && (
         <AddShareModal
           isOpen={isAddShareModalOpen}
-          onClose={() => setIsAddShareModalOpen(false)}
+          onClose={() => {
+            setIsAddShareModalOpen(false);
+            setEditingShare(null);
+          }}
           members={members}
           currentUserId={user.id}
           onAdd={handleAddShare}
+          initialShare={editingShare}
+          initialParticipants={editingShare ? participants.filter(p => p.share_id === editingShare.id) : undefined}
         />
       )}
+
+      {/* Silme Onay Modalı */}
+      <Modal
+        isOpen={!!shareToDelete}
+        onClose={() => !isDeleting && setShareToDelete(null)}
+        title="Harcamayı Sil"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            Bu harcamayı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve gruptaki herkesin hesaplaşma tablosu yeniden hesaplanır.
+          </p>
+          <div className="flex gap-3">
+            <Button variant="ghost" fullWidth onClick={() => setShareToDelete(null)} disabled={isDeleting}>
+              İptal
+            </Button>
+            <Button variant="danger" fullWidth onClick={handleDeleteShare} isLoading={isDeleting}>
+              Evet, Sil
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Ödeme Onay Modalı */}
+      <Modal
+        isOpen={!!settleDebtModal}
+        onClose={() => !isSettling && setSettleDebtModal(null)}
+        title="Ödemeyi Onayla"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            <strong className="text-slate-900 dark:text-white">₺{settleDebtModal?.amount?.toFixed(2)}</strong> tutarındaki borcun ödendiğini onaylıyor musunuz? Bu işlem bakiyelerden düşülecektir.
+          </p>
+          <div className="flex gap-3">
+            <Button variant="ghost" fullWidth onClick={() => setSettleDebtModal(null)} disabled={isSettling}>
+              İptal
+            </Button>
+            <Button variant="primary" fullWidth onClick={handleSettleDebt} isLoading={isSettling}>
+              Evet, Onayla
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* VIEW SHARE MODAL */}
+      <ViewShareModal
+        isOpen={!!viewShare}
+        onClose={() => setViewShare(null)}
+        share={viewShare}
+        participants={participants}
+        members={members}
+        currentUserId={user?.id || ''}
+        onEdit={() => {
+          if (viewShare) {
+            setEditingShare(viewShare);
+            setIsAddShareModalOpen(true);
+            setViewShare(null);
+          }
+        }}
+      />
+
+      {/* BALANCE BREAKDOWN MODAL */}
+      <BalanceBreakdownModal
+        isOpen={isBreakdownModalOpen}
+        onClose={() => setIsBreakdownModalOpen(false)}
+        member={myMember}
+        shares={shares || []}
+        participants={participants || []}
+        settlements={useShareStore.getState().settlements || []}
+        members={members || []}
+        onViewShare={(share) => {
+          setIsBreakdownModalOpen(false);
+          setViewShare(share);
+        }}
+      />
     </div>
   );
 };
