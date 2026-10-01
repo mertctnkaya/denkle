@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useToastStore } from '../store/toastStore';
 import { usePartyStore } from '../store/partyStore';
+import { useHomeStore } from '../store/homeStore';
 import { Icon } from '../components/shared/Icon';
 import { Button } from '../components/shared/Button';
 import { Modal } from '../components/shared/Modal';
@@ -12,6 +13,7 @@ export const Home = () => {
   const navigate = useNavigate();
   const { profile, user } = useAuthStore();
   const { parties, fetchParties, createParty, isLoading } = usePartyStore();
+  const { totalOwedToMe, totalIOwe, recentActivities, fetchDashboardData } = useHomeStore();
 
   const [isNewGroupModalOpen, setIsNewGroupModalOpen] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
@@ -26,6 +28,12 @@ export const Home = () => {
   useEffect(() => {
     fetchParties();
   }, [fetchParties]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchDashboardData(user.id);
+    }
+  }, [user, parties.length, fetchDashboardData]); // partiler eklendikçe dashboard'ı güncelle
 
   const fullName = profile?.full_name || user?.user_metadata?.full_name;
   const initial = fullName ? fullName.charAt(0).toUpperCase() : 'K';
@@ -55,7 +63,6 @@ export const Home = () => {
     }
 
     setIsJoining(true);
-    // Henüz joinParty çağırmıyoruz, birazdan ekleyeceğiz
     const joinedId = await usePartyStore.getState().joinParty(joinCodeInput.trim());
     setIsJoining(false);
 
@@ -69,11 +76,6 @@ export const Home = () => {
       navigate(`/party/${joinedId}`);
     }
   };
-
-  // İleride veritabanından gelecek örnek veriler (Harcamalar için mock kalsın şimdilik)
-  const recentShares = [
-    { id: 1, title: 'Migros Alışverişi', group: 'Ev Arkadaşları', emoji: '🛒', amount: -340, status: 'Ödeyeceksin', isDebt: true, time: '2 saat önce' },
-  ];
 
   return (
     <div className="p-6 md:p-0 pt-12 md:pt-6">
@@ -103,18 +105,18 @@ export const Home = () => {
         <div className="relative z-10 flex flex-row items-center justify-between mb-8">
           <div className="flex-1">
             <p className="text-slate-400 text-sm font-medium mb-1">Alacağın</p>
-            <h2 className="text-2xl md:text-3xl font-bold text-success-light">₺0.00</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-success-light">₺{totalOwedToMe.toFixed(2)}</h2>
           </div>
           <div className="w-px h-12 bg-slate-700 mx-4"></div>
           <div className="flex-1 text-right">
             <p className="text-slate-400 text-sm font-medium mb-1">Ödeyeceğin</p>
-            <h2 className="text-2xl md:text-3xl font-bold text-danger-light">₺0.00</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-danger-light">₺{totalIOwe.toFixed(2)}</h2>
           </div>
         </div>
 
         <div className="relative z-10 flex gap-4">
-          <Button variant="primary" icon="plus" fullWidth>Ben Ödedim</Button>
-          <Button className="bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border-0" fullWidth>Hızlı Paylaş</Button>
+          <Button variant="primary" icon="plus" fullWidth onClick={() => addToast('Önce bir gruba girmelisin!', 'info')}>Ben Ödedim</Button>
+          <Button className="bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border-0" fullWidth onClick={() => addToast('Önce bir gruba girmelisin!', 'info')}>Hızlı Paylaş</Button>
         </div>
       </div>
 
@@ -213,28 +215,28 @@ export const Home = () => {
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Son Hareketler</h3>
         <button
-          onClick={() => navigate('/activity')}
+          onClick={() => navigate('/parties')}
           className="text-sm font-semibold text-primary hover:text-primary-dark transition-colors cursor-pointer hidden md:block"
         >
           Tümünü Gör
         </button>
       </div>
 
-      {parties.length === 0 ? (
+      {parties.length === 0 || recentActivities.length === 0 ? (
         <div className="soft-card p-6 bg-slate-50 dark:bg-card-dark rounded-3xl border border-slate-200/60 dark:border-slate-800/50 shadow-sm text-center">
           <p className="text-slate-500 dark:text-slate-400 text-sm">Grup kurduktan sonra harcamaların burada görünecek.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {recentShares.map((share) => (
-            <div key={share.id} className="soft-card p-4 flex items-center justify-between hover:scale-[1.02] cursor-pointer bg-slate-50 dark:bg-card-dark rounded-2xl border border-slate-200/60 dark:border-slate-800/50 shadow-sm group">
+          {recentActivities.map((share) => (
+            <div key={share.id} onClick={() => navigate(`/party/${share.partyId}`)} className="soft-card p-4 flex items-center justify-between hover:scale-[1.02] cursor-pointer bg-slate-50 dark:bg-card-dark rounded-2xl border border-slate-200/60 dark:border-slate-800/50 shadow-sm group">
               <div className="flex items-center gap-4">
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl shrink-0 ${share.isDebt ? 'bg-danger-light/50 dark:bg-danger-dark/20' : 'bg-success-light/50 dark:bg-success-dark/20'}`}>
                   {share.emoji}
                 </div>
                 <div>
                   <p className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-primary transition-colors">{share.title}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{share.group} • {share.time}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{share.partyName} • {share.time}</p>
                 </div>
               </div>
               <div className="text-right">
