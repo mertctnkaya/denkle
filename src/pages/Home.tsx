@@ -191,7 +191,12 @@ export const Home = () => {
                   </div>
                 </div>
                 <div className="mt-auto">
-                  <h4 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-1 mb-1">{party.name}</h4>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <h4 className="font-bold text-sm text-slate-900 dark:text-white line-clamp-1">{party.name}</h4>
+                    {party.is_archived && (
+                      <Icon name="archive" size={14} className="text-slate-400 shrink-0" title="Arşivlendi" />
+                    )}
+                  </div>
                   <div
                     onClick={(e) => {
                       e.stopPropagation();
