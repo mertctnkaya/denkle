@@ -19,11 +19,11 @@ export const PartySettingsModal = ({ isOpen, onClose, party, myMember, netBalanc
   const navigate = useNavigate();
   const { addToast } = useToastStore();
   const { updateParty, leaveParty } = usePartyStore();
-  
+
   const [partyName, setPartyName] = useState(party.name);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
-  
+
   const canEditName = myMember.role === 'owner' || myMember.role === 'admin';
   const isOwner = myMember.role === 'owner';
 
@@ -32,7 +32,7 @@ export const PartySettingsModal = ({ isOpen, onClose, party, myMember, netBalanc
     setIsUpdating(true);
     const success = await updateParty(party.id, { name: partyName.trim() });
     setIsUpdating(false);
-    
+
     if (success) {
       addToast('Grup adı güncellendi.', 'success');
     } else {
@@ -45,7 +45,7 @@ export const PartySettingsModal = ({ isOpen, onClose, party, myMember, netBalanc
     setIsUpdating(true);
     const success = await updateParty(party.id, { is_archived: !party.is_archived });
     setIsUpdating(false);
-    
+
     if (success) {
       addToast(party.is_archived ? 'Grup arşivden çıkarıldı.' : 'Grup arşivlendi.', 'success');
     } else {
@@ -59,7 +59,7 @@ export const PartySettingsModal = ({ isOpen, onClose, party, myMember, netBalanc
       addToast(`Gruptan ayrılabilmek için bakiyenizin sıfır olması gerekiyor (Mevcut: ${netBalance > 0 ? '+' : ''}${netBalance} TL).`, 'warning');
       return;
     }
-    
+
     if (isOwner) {
       addToast('Kurucu gruptan ayrılamaz. Önce kuruculuğu devretmelisiniz.', 'error');
       return;
@@ -80,19 +80,19 @@ export const PartySettingsModal = ({ isOpen, onClose, party, myMember, netBalanc
       addToast(err || 'Gruptan ayrılırken hata oluştu.', 'error');
     }
   };
-  
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Grup Ayarları">
       <div className="space-y-6">
-        
+
         {/* Grup Adı */}
         <div className="space-y-2">
           <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Grup Adı</label>
           <div className="flex gap-2">
-            <input 
-              type="text" 
-              value={partyName} 
-              onChange={(e) => setPartyName(e.target.value)} 
+            <input
+              type="text"
+              value={partyName}
+              onChange={(e) => setPartyName(e.target.value)}
               disabled={!canEditName}
               className="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 text-slate-900 dark:text-white disabled:opacity-50"
             />
@@ -104,15 +104,30 @@ export const PartySettingsModal = ({ isOpen, onClose, party, myMember, netBalanc
           </div>
         </div>
 
-        {/* AI Idea: QR Şablonu */}
-        <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex items-start gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <Icon name="scan" size={20} />
+        {/* Yönetim Modu */}
+        <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+          <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Grup Yönetim Tercihleri</h4>
+          
+          <div className="flex items-center justify-between opacity-60">
+            <div>
+              <h5 className="font-bold text-sm text-slate-900 dark:text-white">Demokrasi Modu</h5>
+              <p className="text-xs text-slate-500 mt-0.5">Sadece kurucu değil, herkes harcama silebilir/düzenleyebilir.</p>
+              <span className="text-[9px] bg-primary/10 text-primary-dark dark:text-primary-light px-1.5 py-0.5 rounded uppercase font-bold mt-1 inline-block">Yakında</span>
+            </div>
+            <div className="w-10 h-5 bg-slate-200 dark:bg-slate-700 rounded-full relative cursor-not-allowed">
+              <div className="w-4 h-4 bg-white rounded-full absolute left-0.5 top-0.5 shadow-sm"></div>
+            </div>
           </div>
-          <div>
-            <h4 className="font-bold text-sm text-slate-900 dark:text-white">Ev Arkadaşı Modu (QR)</h4>
-            <p className="text-xs text-slate-500 mt-1 mb-2">Buzdolabına asmalık hızlı harcama ekleme şablonu. (v0.5 ile gelecek)</p>
-            <button className="text-xs font-bold text-primary hover:underline cursor-pointer" onClick={() => addToast('Bu özellik henüz yapım aşamasında!', 'info')}>Önizlemeyi Gör</button>
+
+          <div className="flex items-center justify-between opacity-60">
+            <div>
+              <h5 className="font-bold text-sm text-slate-900 dark:text-white">Harcama Onay Sistemi</h5>
+              <p className="text-xs text-slate-500 mt-0.5">Eklenen harcamalar gruptakiler onaylayınca kesinleşir.</p>
+              <span className="text-[9px] bg-primary/10 text-primary-dark dark:text-primary-light px-1.5 py-0.5 rounded uppercase font-bold mt-1 inline-block">Yakında</span>
+            </div>
+            <div className="w-10 h-5 bg-slate-200 dark:bg-slate-700 rounded-full relative cursor-not-allowed">
+              <div className="w-4 h-4 bg-white rounded-full absolute left-0.5 top-0.5 shadow-sm"></div>
+            </div>
           </div>
         </div>
 

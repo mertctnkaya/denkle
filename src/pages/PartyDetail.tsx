@@ -134,18 +134,18 @@ export const PartyDetail = () => {
     );
   }
 
-  if (error || !currentParty) {
+  const myMember = (members || []).find(m => m.profile_id === user?.id);
+
+  if (error || !currentParty || (!myMember && !partyLoading)) {
     return (
-      <div className="p-6 pt-12 text-center">
-        <Icon name="error" size={48} className="mx-auto text-danger mb-4" />
-        <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Grup Bulunamadı</h2>
-        <p className="text-slate-500 mb-6">{error || "Aradığınız grup silinmiş veya erişim izniniz yok."}</p>
-        <Button onClick={() => navigate('/')} variant="outline">Ana Sayfaya Dön</Button>
+      <div className="flex-1 flex flex-col items-center justify-center p-6 pt-24 text-center">
+        <Icon name="error" size={64} className="text-danger mb-4" />
+        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">Grup Bulunamadı</h2>
+        <p className="text-slate-500 mb-8 max-w-sm">{error || "Aradığınız grup silinmiş, yetkiniz kaldırılmış veya yanlış bir bağlantıya tıkladınız."}</p>
+        <Button onClick={() => navigate('/')} variant="outline" className="px-8 py-3">Ana Sayfaya Dön</Button>
       </div>
     );
   }
-
-  const myMember = (members || []).find(m => m.profile_id === user?.id);
 
   const myNetBalance = useMemo(() => {
     let balance = 0;
@@ -196,12 +196,37 @@ export const PartyDetail = () => {
           </div>
         </div>
 
-        <button 
-          onClick={() => setIsSettingsModalOpen(true)}
-          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300"
-        >
-          <Icon name="settings" size={20} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button 
+            onClick={async () => {
+              if (myNetBalance !== 0) {
+                addToast(`Gruptan ayrılabilmek için bakiyenizin sıfır olması gerekiyor.`, 'warning');
+                return;
+              }
+              if (myMember?.role === 'owner') {
+                addToast('Kurucu gruptan ayrılamaz. Önce kuruculuğu devretmelisiniz.', 'error');
+                return;
+              }
+              if (!window.confirm('Gruptan ayrılmak istediğinize emin misiniz?')) return;
+              
+              const success = await usePartyStore.getState().leaveParty(currentParty.id, myMember!.id);
+              if (success) {
+                addToast('Gruptan ayrıldınız.', 'success');
+                navigate('/');
+              }
+            }}
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors text-rose-500"
+            title="Gruptan Ayrıl"
+          >
+            <Icon name="logout" size={20} />
+          </button>
+          <button 
+            onClick={() => setIsSettingsModalOpen(true)}
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300"
+          >
+            <Icon name="settings" size={20} />
+          </button>
+        </div>
       </div>
 
       {/* 2. DASHBOARD / ÖZET KARTI */}

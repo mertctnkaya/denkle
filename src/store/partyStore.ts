@@ -408,6 +408,19 @@ export const usePartyStore = create<PartyState>((set, get) => ({
         .eq('party_id', partyId);
       
       if (error) throw error;
+      
+      // Çıkış yapıldıktan sonra partiler listesini güncelle
+      await get().fetchParties();
+      set({ currentParty: null, members: [], events: [] });
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Dashboard state'ini yenilemek için home store'a dispatch
+        import('./homeStore').then(module => {
+          module.useHomeStore.getState().fetchDashboardData(user.id);
+        });
+      }
+      
       return true;
     } catch (err: any) {
       set({ error: err.message });
