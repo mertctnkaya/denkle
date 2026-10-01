@@ -464,13 +464,23 @@ export const usePartyStore = create<PartyState>((set, get) => ({
         }]);
       }
 
-      const { error } = await supabase
+      const { data: deletedRows, error } = await supabase
         .from('party_members')
         .delete()
         .eq('id', memberId)
-        .eq('party_id', partyId);
+        .eq('party_id', partyId)
+        .select();
       
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes('foreign key constraint')) {
+          throw new Error('Gruptan ayrılabilmek için veritabanında "Cascade" ayarları eksik. Lütfen size verilen SQL kodunu Supabase üzerinde çalıştırın.');
+        }
+        throw error;
+      }
+
+      if (!deletedRows || deletedRows.length === 0) {
+        throw new Error('Gruptan ayrılma işlemi başarısız oldu. Silme yetkiniz yok (RLS politikası eksik).');
+      }
       
       // Çıkış yapıldıktan sonra partiler listesini güncelle
       await get().fetchParties();
