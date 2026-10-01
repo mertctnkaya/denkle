@@ -11,10 +11,11 @@ interface PartySettingsModalProps {
   onClose: () => void;
   party: Party;
   myMember: PartyMember;
-  netBalance: number; // Kullanıcının gruptaki net bakiyesi
+  netBalance: number;
+  onDeleteParty?: () => void;
 }
 
-export const PartySettingsModal = ({ isOpen, onClose, party, myMember, netBalance }: PartySettingsModalProps) => {
+export const PartySettingsModal = ({ isOpen, onClose, party, myMember, netBalance, onDeleteParty }: PartySettingsModalProps) => {
   const navigate = useNavigate();
   const { addToast } = useToastStore();
   const { updateParty, leaveParty } = usePartyStore();
@@ -150,6 +151,19 @@ export const PartySettingsModal = ({ isOpen, onClose, party, myMember, netBalanc
             Gruptan ayrılabilmek için bakiyenizin tam olarak 0 (sıfır) olması gerekir.
           </p>
         </div>
+
+        {/* Grubu Sil (Sadece Kurucu) */}
+        {isOwner && onDeleteParty && (
+          <div className="pt-2">
+            <button 
+              onClick={onDeleteParty}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-rose-600 bg-rose-50 hover:bg-rose-100 dark:bg-rose-900/20 dark:hover:bg-rose-900/40 dark:text-rose-500 font-bold transition-colors"
+            >
+              <Icon name="trash" size={18} />
+              Grubu Sil
+            </button>
+          </div>
+        )}
 
       </div>
     </Modal>

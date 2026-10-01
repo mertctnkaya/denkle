@@ -19,6 +19,7 @@ interface PartyState {
   updateMemberRole: (partyId: string, memberId: string, newRole: 'owner' | 'admin' | 'member') => Promise<void>;
   removeMember: (partyId: string, memberId: string) => Promise<void>;
   updateParty: (partyId: string, updates: Partial<Party>, actorId?: string) => Promise<boolean>;
+  deleteParty: (partyId: string) => Promise<boolean>;
   leaveParty: (partyId: string, memberId: string) => Promise<boolean>;
 }
 
@@ -400,6 +401,32 @@ export const usePartyStore = create<PartyState>((set, get) => ({
 
       await get().fetchPartyDetails(partyId);
       await get().fetchEvents(partyId);
+      return true;
+    } catch (err: any) {
+      set({ error: err.message });
+      return false;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  deleteParty: async (partyId: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      // 1. Önce gruba ait shares (harcamalar) veya settlements gibi alt tabloların otomatik
+      // silinmesi (ON DELETE CASCADE) veritabanı tarafında ayarlı olmalıdır.
+      const { error } = await supabase
+        .from('parties')
+        .delete()
+        .eq('id', partyId);
+      
+      if (error) throw error;
+      
+      // 2. State'i temizle ve ana sayfayı güncelle
+      set({ currentParty: null, members: [], events: [] });
+      await get().fetchParties();
+      // Ana sayfa loglarını da yenile
+      import('./homeStore').then(m => m.useHomeStore.getState().fetchDashboardData());
       return true;
     } catch (err: any) {
       set({ error: err.message });

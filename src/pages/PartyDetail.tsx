@@ -160,6 +160,15 @@ export const PartyDetail = () => {
     );
   }
 
+  const handleDeleteParty = async () => {
+    if (!window.confirm('Bu grubu ve içindeki her şeyi KÖKTEN silmek istediğinize emin misiniz? Bu işlem geri alınamaz!')) return;
+    const success = await usePartyStore.getState().deleteParty(currentParty.id);
+    if (success) {
+      addToast('Grup başarıyla silindi.', 'success');
+      navigate('/');
+    }
+  };
+
   const isPositive = myNetBalance > 0;
 
   return (
@@ -219,6 +228,17 @@ export const PartyDetail = () => {
           >
             <Icon name="logout" size={20} />
           </button>
+          
+          {myMember?.role === 'owner' && (
+            <button
+              onClick={handleDeleteParty}
+              className="w-10 h-10 cursor-pointer flex items-center justify-center rounded-full hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors text-rose-500"
+              title="Grubu Sil"
+            >
+              <Icon name="trash" size={20} />
+            </button>
+          )}
+
           <button
             onClick={() => setIsSettingsModalOpen(true)}
             className="w-10 h-10 cursor-pointer flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300"
@@ -647,6 +667,7 @@ export const PartyDetail = () => {
         party={currentParty}
         myMember={myMember!}
         netBalance={myNetBalance}
+        onDeleteParty={handleDeleteParty}
       />
     </div>
   );
