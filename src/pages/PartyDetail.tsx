@@ -126,6 +126,19 @@ export const PartyDetail = () => {
   const isLoading = partyLoading || shareLoading;
   const error = partyError;
 
+  const myMember = (members || []).find(m => m.profile_id === user?.id);
+
+  const myNetBalance = useMemo(() => {
+    let balance = 0;
+    if (myMember && computedDebts) {
+      computedDebts.forEach(debt => {
+        if (debt.from === myMember.id) balance -= debt.amount;
+        if (debt.to === myMember.id) balance += debt.amount;
+      });
+    }
+    return balance;
+  }, [myMember, computedDebts]);
+
   // 1. Durum: İlk sayfa yüklemesi (parti verisi henüz hiç gelmediyse)
   if (isLoading && !currentParty) {
     return (
@@ -134,8 +147,6 @@ export const PartyDetail = () => {
       </div>
     );
   }
-
-  const myMember = (members || []).find(m => m.profile_id === user?.id);
 
   // 2. Durum: Yüklendi ama parti yok, hata var veya kullanıcı bu grupta değil
   if (error || !currentParty || !myMember) {
@@ -148,19 +159,6 @@ export const PartyDetail = () => {
       </div>
     );
   }
-
-  const myNetBalance = useMemo(() => {
-    let balance = 0;
-    if (myMember && computedDebts) {
-      computedDebts.forEach(debt => {
-        // Ben borçluysam (ödeyeceğim) eksiye
-        if (debt.from === myMember.id) balance -= debt.amount;
-        // Ben alacaklıysam (bana ödenecek) artıya
-        if (debt.to === myMember.id) balance += debt.amount;
-      });
-    }
-    return balance;
-  }, [myMember, computedDebts]);
 
   const isPositive = myNetBalance > 0;
 

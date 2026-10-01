@@ -50,9 +50,10 @@ interface IconProps {
   size?: number;
   className?: string;
   strokeWidth?: number;
+  title?: string;
 }
 
-export const Icon = ({ name, size = 24, className = '', strokeWidth = 2 }: IconProps) => {
+export const Icon = ({ name, size = 24, className = '', strokeWidth = 2, title }: IconProps) => {
   const LucideComponent = iconMap[name];
 
   if (!LucideComponent) {
@@ -65,6 +66,8 @@ export const Icon = ({ name, size = 24, className = '', strokeWidth = 2 }: IconP
       size={size}
       className={className}
       strokeWidth={strokeWidth}
-    />
+    >
+      {title && <title>{title}</title>}
+    </LucideComponent>
   );
 };
